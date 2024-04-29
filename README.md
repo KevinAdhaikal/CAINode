@@ -1,5 +1,5 @@
 # CAINode
-Unofficial Character AI using Node JS
+Unofficial Character.AI API using Node JS
 # Install
 `npm install cainode`
 # Example
