@@ -586,6 +586,10 @@ class CAINode extends events.EventEmitter {
     }
     async logout() {
         if (!this.#ws[0] && !this.#ws[1]) return 0;
+
+        if (!this.#join_type == 1) this.character.disconnect()
+        else if (this.#join_type == 2) this.room.disconnect()
+        
         await close_ws(this.#ws[0])
         await close_ws(this.#ws[1])
         this.#ws = []
