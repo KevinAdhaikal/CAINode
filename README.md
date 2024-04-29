@@ -1,5 +1,7 @@
 # CAINode
 Unofficial Character AI using Node JS
+# Install
+`npm install cainode`
 # Example
 ```js
 const CAINode = require("./index.js");
