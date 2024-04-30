@@ -1,6 +1,7 @@
 const https = require("https")
 const WebSocket = require("ws")
 const events = require('events');
+const { disconnect } = require("process");
 
 function https_fetch(url, path, method, headers, body, get_headers) {
     if (body) headers["Content-Length"] = body.length
@@ -76,6 +77,10 @@ function send_ws(ws_con, data, is_once, using_json, wait_json_prop_type) {
                         switch(wait_json_prop_type) {
                             case 1: {
                                 if (!message.turn.author.is_human && message.turn.candidates[0].is_final) resolve(message)
+                                break;
+                            }
+                            case 2: {
+                                if (!message["push"].pub.data.turn.candidates[0].is_final) resolve(message)
                                 break;
                             }
                         }
@@ -348,7 +353,7 @@ class CAINode extends events.EventEmitter {
                                 }
                             },
                             "id": 1
-                        }), 0, 1, 1)
+                        }), 0, 1, 2)
                         break;
                     }
                     default: {
@@ -372,7 +377,7 @@ class CAINode extends events.EventEmitter {
                         }
                     },
                     "id": 1
-                }), 0, 1)
+                }), 0, 1, 2)
             },
             send: async (message, manual_turn) => {
                 if (!this.#token) throw "Please login first"
@@ -586,10 +591,10 @@ class CAINode extends events.EventEmitter {
     }
     async logout() {
         if (!this.#ws[0] && !this.#ws[1]) return 0;
-
+        
         if (this.#join_type == 1) this.character.disconnect()
         else if (this.#join_type == 2) this.room.disconnect()
-        
+    
         await close_ws(this.#ws[0])
         await close_ws(this.#ws[1])
         this.#ws = []
