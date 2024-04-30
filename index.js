@@ -1,7 +1,6 @@
 const https = require("https")
 const WebSocket = require("ws")
 const events = require('events');
-const { disconnect } = require("process");
 
 function https_fetch(url, path, method, headers, body, get_headers) {
     if (body) headers["Content-Length"] = body.length
@@ -80,7 +79,7 @@ function send_ws(ws_con, data, is_once, using_json, wait_json_prop_type) {
                                 break;
                             }
                             case 2: {
-                                if (!message["push"].pub.data.turn.candidates[0].is_final) resolve(message)
+                                if (message["push"].pub.data.turn.candidates[0].is_final) resolve(message)
                                 break;
                             }
                         }
