@@ -1,36 +1,25 @@
-const https = require("https")
 const WebSocket = require("ws")
 const events = require('events');
 
-function https_fetch(url, path, method, headers, body, get_headers) {
+async function https_fetch(url, method, headers, body) {
     if (body) headers["Content-Length"] = body.length
-    return new Promise((resolve, reject) => {
-        const req = https.request({
-            hostname: url,
-            path: path,
-            method: method,
-            headers: {
-                'User-Agent': 'Character.AI/1.8.6 (React Native; Android)',
-                'DNT': '1',
-                'Sec-GPC': '1',
-                'Connection': 'keep-alive',
-                'Upgrade-Insecure-Requests': '1',
-                'Sec-Fetch-Dest': 'document',
-                'Sec-Fetch-Mode': 'navigate',
-                'Sec-Fetch-Site': 'none',
-                'Sec-Fetch-User': '?1',
-                'TE': 'trailers',
-                ...headers
-            },
-        }, (res) => {
-            if (get_headers) resolve(res.headers)
-            let data = '';
-            res.on('data', (chunk) => data += chunk);
-            res.on('end', () => resolve(data));
-        });
-        if (body) req.write(body)
-        req.end();
-    });
+    return await fetch(url, {
+        method: method,
+        headers: {
+            "User-Agent": "Character.AI/1.8.6 (React Native; Android)",
+            "DNT": "1",
+            "Sec-GPC": "1",
+            "Connection": "keep-alive",
+            "Upgrade-Insecure-Requests": "1",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+            "Sec-Fetch-User": "?1",
+            "TE": "trailers",
+            "Connection": "close",
+            ...headers
+        }
+    })
 }
 
 function generateRandomUUID() {
@@ -64,30 +53,37 @@ function open_ws(url, cookie, using_ping, userid, this_class) {
 
 function send_ws(ws_con, data, is_once, using_json, wait_json_prop_type) {
     return new Promise((resolve, reject) => {
-        ws_con.send(data)
         if (is_once) ws_con.once("message", (message) => {
             resolve(using_json ? JSON.parse(message.toString()) : message.toString())
         })
         else {
-            ws_con.on("message", (message) => {
+            function ws_con_handler(message) {
                 message = using_json ? JSON.parse(message.toString()) : message.toString()
                 if (using_json && wait_json_prop_type) {
                     try {
                         switch(wait_json_prop_type) {
                             case 1: {
-                                if (!message.turn.author.is_human && message.turn.candidates[0].is_final) resolve(message)
+                                if (!message.turn.author.is_human && message.turn.candidates[0].is_final) {
+                                    ws_con.removeListener("message", ws_con_handler);
+                                    resolve(message)
+                                }
                                 break;
                             }
                             case 2: {
-                                if (message["push"].pub.data.turn.candidates[0].is_final) resolve(message)
+                                if (message["push"].pub.data.turn.candidates[0].is_final) {
+                                    ws_con.removeListener("message", ws_con_handler);
+                                    resolve(message)
+                                }
                                 break;
                             }
                         }
                     }
                     catch(e) {}
                 }
-            })
+            }
+            ws_con.on("message", (message) => ws_con_handler(message))
         }
+        ws_con.send(data)
     })
 }
 
@@ -119,9 +115,9 @@ class CAINode extends events.EventEmitter {
             setting: async () => {
                 return !this.#token ? (() => {
                     throw "Please login first"
-                })() : JSON.parse(await https_fetch("beta.character.ai", "/chat/user/settings/", "GET", {
+                })() : await (await https_fetch("https://beta.character.ai/chat/user/settings/", "GET", {
                     'Authorization': `Token ${this.#token}`
-                }))
+                })).json()
             }
         }
 
@@ -129,49 +125,49 @@ class CAINode extends events.EventEmitter {
             search: async (name) => {
                 return !this.#token ? (() => {
                     throw "Please login first"
-                })() : JSON.parse(await https_fetch("beta.character.ai", `/chat/characters/search/?query=${name}`, "GET", {
+                })() : await (await https_fetch(`https://beta.character.ai/chat/characters/search/?query=${name}`, "GET", {
                     'Authorization': `Token ${this.#token}`
-                }))
+                })).json()
             },
             serach_suggest: async (name) => {
                 return !this.#token ? (() => {
                     throw "Please login first"
-                })() : JSON.parse(await https_fetch("beta.character.ai", `/chat/characters/suggest/?query=${name}`, "GET", {
+                })() : await (await https_fetch(`https://beta.character.ai/chat/characters/suggest/?query=${name}`, "GET", {
                     'Authorization': `Token ${this.#token}`
-                }))
+                })).json()
             },
             info: async (char_extern_id) => {
                 return !this.#token ? (() => {
                     throw "Please login first"
-                })() : JSON.parse(await https_fetch("beta.character.ai", "/chat/character/info/", "POST", {
+                })() : await (await https_fetch("https://beta.character.ai/chat/character/info/", "POST", {
                     'Authorization': `Token ${this.#token}`,
                     "Content-Type": "application/json"
                 }, JSON.stringify({
                     "external_id": char_extern_id
-                })))
+                }))).json()
             },
             info_neo: async (char_extern_id) => {
                 return !this.#token ? (() => {
                     throw "Please login first"
-                })() : JSON.parse(await https_fetch("neo.character.ai", `/chats/recent/${char_extern_id}`, "GET", {
+                })() : await (await https_fetch(`https://neo.character.ai/chats/recent/${char_extern_id}`, "GET", {
                     'Authorization': `Token ${this.#token}`
-                }))
+                })).json()
             },
             recent_list: async () => {
                 return !this.#token ? (() => {
                     throw "Please login first"
-                })() : JSON.parse(await https_fetch("neo.character.ai", "/chats/recent/", "GET", {
+                })() : await (await https_fetch("https://neo.character.ai/chats/recent/", "GET", {
                     'Authorization': `Token ${this.#token}`
-                }))
+                })).json()
             },
             connect: async (char_id) => {
                 if (!this.#token) throw "Please login first"
                 if (this.#join_type == 2) throw "You're already connectetd in Group Chat, please disconnect first"
 
-                let res = await JSON.parse(await https_fetch("neo.character.ai", `/chats/recent/${char_id}`, "GET", {
+                let res = await (await https_fetch(`https://neo.character.ai/chats/recent/${char_id}`, "GET", {
                     'Authorization': `Token ${this.#token}`
-                }))
-                await https_fetch("neo.character.ai", `/chat/${res.chats[0].chat_id}/resurrect`, "GET", {
+                })).json()
+                await https_fetch(`https://neo.character.ai/chat/${res.chats[0].chat_id}/resurrect`, "GET", {
                     'Authorization': `Token ${this.#token}`
                 });
 
@@ -196,9 +192,9 @@ class CAINode extends events.EventEmitter {
         this.room = {
             list: async () => {
                 if (!this.#token) throw "Please login first"
-                return JSON.parse(await https_fetch("neo.character.ai", "/murooms/?include_turns=false", "GET", {
+                return await (await https_fetch("https://neo.character.ai/murooms/?include_turns=false", "GET", {
                     'Authorization': `Token ${this.#token}`
-                }))
+                })).json()
             },
             connect: async (room_id) => {
                 if (!this.#token) throw "Please login first"
@@ -212,7 +208,7 @@ class CAINode extends events.EventEmitter {
             },
             disconnect: async () => {
                 if (!this.#token) throw "Please login first"
-                if (this.#join_type != 2) throw "You are not connected to any room"
+                if (this.#join_type != 2) throw "You're not connected to any Group Chat"
                 const res = await send_ws(this.#ws[0], `{"unsubscribe":{"channel":"room:${this.#current_chat_id}"},"id":1}`, 1, 1)
 
                 this.#join_type = 0;
@@ -221,7 +217,7 @@ class CAINode extends events.EventEmitter {
             },
             create: async(title_room, char_id) => {
                 if (!this.#token) throw "Please login first"
-                return await https_fetch("", "", "POST", {'Authorization': `Token ${this.#token}`}, JSON.stringify({
+                return await (await https_fetch("https://neo.character.ai/muroom/create", "POST", {'Authorization': `Token ${this.#token}`}, JSON.stringify({
                     "characters": Array.isArray(char_id) ? char_id : [char_id],
                     "title": title_room,
                     "settings": {
@@ -230,17 +226,16 @@ class CAINode extends events.EventEmitter {
                     },
                     "visibility": "VISIBILITY_UNLISTED",
                     "with_greeting": true
-                }))
+                }))).json()
             },
             delete: async (room_id) => {
                 if (!this.#token) throw "Please login first"
-                await https_fetch("neo.character.ai", `/muroom/${this.#join_type == 2 ? this.#current_chat_id : room_id}/`, "DELETE", {'Authorization': `Token ${this.#token}`})
                 if (this.#join_type == 2) await send_ws(this.#ws[0], `{"unsubscribe":{"channel":"room:${this.#current_chat_id}"},"id":1}`, true)
-                return 1;
+                return await (await https_fetch(`https://neo.character.ai/muroom/${this.#join_type == 2 ? this.#current_chat_id : room_id}/`, "DELETE", {'Authorization': `Token ${this.#token}`})).json()
             },
             rename: async (name, room_id) => {
                 if (!this.#token) throw "Pleae login first"
-                return JSON.parse(await https_fetch("neo.character.ai", `/muroom/${this.#join_type == 2 ? this.#current_chat_id : room_id}/`, "PATCH", {'Authorization': `Token ${this.#token}`}, JSON.stringify([
+                return await (await https_fetch(`https://neo.character.ai/muroom/${this.#join_type == 2 ? this.#current_chat_id : room_id}/`, "PATCH", {'Authorization': `Token ${this.#token}`}, JSON.stringify([
                     {
                         "op": "replace",
                         "path": `/muroom/${this.#join_type == 2 ? this.#current_chat_id : room_id}`,
@@ -248,18 +243,18 @@ class CAINode extends events.EventEmitter {
                             "title": `${name}`
                         }
                     }
-                ])))
+                ]))).json()
             },
             join_group_invite: async(invite_link) => {
                 if (!this.#token) throw "Please login first"
-                await https_fetch("neo.character.ai", `/muroom/?join_token=${invite_link}`, "GET", {'Authorization': `Token ${this.#token}`})
-                return JSON.parse(await https_fetch("neo.character.ai", `/muroom/join`, "POST", {'Authorization': `Token ${this.#token}`}, `{"join_token":"${invite_link}"}`))
+                await https_fetch(`https://neo.character.ai/muroom/?join_token=${invite_link}`, "GET", {'Authorization': `Token ${this.#token}`})
+                return await (await https_fetch("https://neo.character.ai/muroom/join", "POST", {'Authorization': `Token ${this.#token}`}, `{"join_token":"${invite_link}"}`)).json()
             },
             char_add: async (char_id) => {
                 if (!this.#token) throw "Please login first"
-                if (this.#join_type != 2) throw "Please join group first"
+                if (this.#join_type != 2) throw "You're not connected to any Group Chat"
                 if (Array.isArray(char_id)) {
-                    return JSON.parse(await https_fetch("neo.character.ai", `/muroom/${this.#current_chat_id}/`, "PATCH", {
+                    return await (await https_fetch(`https://neo.character.ai/muroom/${this.#current_chat_id}/`, "PATCH", {
                         'Authorization': `Token ${this.#token}`
                     }, JSON.stringify(char_id.map(id => {
                         return {
@@ -269,9 +264,9 @@ class CAINode extends events.EventEmitter {
                                 "id": id
                             }
                         };
-                    }))))
+                    })))).json()
                 } else {
-                    return JSON.parse(await https_fetch("neo.character.ai", `/muroom/${this.#current_chat_id}/`, "PATCH", {
+                    return await (await https_fetch(`https://neo.character.ai/muroom/${this.#current_chat_id}/`, "PATCH", {
                         'Authorization': `Token ${this.#token}`
                     }, JSON.stringify([{
                         "op": "add",
@@ -279,14 +274,14 @@ class CAINode extends events.EventEmitter {
                         "value": {
                             "id": char_id
                         }
-                    }])))
+                    }]))).json()
                 }
             },
             char_remove: async (char_id) => {
                 if (!this.#token) throw "Please login first"
-                if (this.#join_type != 2) throw "Please join group first"
+                if (this.#join_type != 2) throw "You're not connected to any Group Chat"
                 if (Array.isArray(char_id)) {
-                    return JSON.parse(await https_fetch("neo.character.ai", `/muroom/${this.#current_chat_id}/`, "PATCH", {
+                    return await (await https_fetch(`https://neo.character.ai/muroom/${this.#current_chat_id}/`, "PATCH", {
                         'Authorization': `Token ${this.#token}`
                     }, JSON.stringify(char_id.map(id => {
                         return {
@@ -296,9 +291,9 @@ class CAINode extends events.EventEmitter {
                                 "id": id
                             }
                         };
-                    }))))
+                    })))).json()
                 } else {
-                    return JSON.parse(await https_fetch("neo.character.ai", `/muroom/${this.#current_chat_id}/`, "PATCH", {
+                    return await (await https_fetch(`https://neo.character.ai/muroom/${this.#current_chat_id}/`, "PATCH", {
                         'Authorization': `Token ${this.#token}`
                     }, JSON.stringify([{
                         "op": "remove",
@@ -306,7 +301,7 @@ class CAINode extends events.EventEmitter {
                         "value": {
                             "id": char_id
                         }
-                    }])))
+                    }]))).json()
                 }
             }
         }
@@ -316,9 +311,9 @@ class CAINode extends events.EventEmitter {
                 if (!this.#token) throw "Please login first"
                 return !this.#token ? (() => {
                     throw "Please login first"
-                })() : JSON.parse(await https_fetch("neo.character.ai", `/turns/${chat_id ? chat_id : this.#current_chat_id}/`, "GET", {
+                })() : await (await https_fetch(`https://neo.character.ai/turns/${chat_id ? chat_id : this.#current_chat_id}/`, "GET", {
                     'Authorization': `Token ${this.#token}`
-                }))
+                })).json()
             },
             generate_turn: async () => {
                 switch (this.#join_type) {
@@ -360,8 +355,30 @@ class CAINode extends events.EventEmitter {
                     }
                 }
             },
+            generate_turn_candidate: async(turn_id, char_id) => {
+                if (this.#join_type != 2) throw "You're not connected to any Group Chat"
+                return await send_ws(this.#ws[0], JSON.stringify({
+                    "rpc": {
+                        "method": "unused_command",
+                        "data": {
+                            "command": "generate_turn_candidate",
+                            "request_id": generateRandomUUID().slice(0, -12) + this.#current_chat_id.split("-")[4],
+                            "payload": {
+                                "chat_type": "TYPE_MU_ROOM",
+                                "character_id": char_id,
+                                "user_name": this.#user_data.user.user.username,
+                                "turn_key": {
+                                    "turn_id": turn_id,
+                                    "chat_id": this.#current_chat_id
+                                }
+                            }
+                        }
+                    },
+                    "id": 1
+                }), 0, 1, 2)
+            },
             selected_turn: async (char_id) => {
-                if (this.#join_type != 2) throw "You're not join at Group Chat"
+                if (this.#join_type != 2) throw "You're not connected to any Group Chat"
                 return await send_ws(this.#ws[0], JSON.stringify({
                     "rpc": {
                         "method": "unused_command",
@@ -576,13 +593,14 @@ class CAINode extends events.EventEmitter {
         }
     }
 
+    
     async login(token) {
-        if (!this.#edge_rollout) this.#edge_rollout = `${(await https_fetch("character.ai", "/", "GET", "", "", 1))["set-cookie"][0].split("; ")[0].split("=")[1]}`
-        this.#user_data = JSON.parse(await https_fetch("plus.character.ai", "/chat/user/", "GET", {
+        if (!this.#edge_rollout) this.#edge_rollout = (await https_fetch("https://character.ai/", "GET")).headers.getSetCookie()[0].split("; ")[0].split("=")[1]
+        this.#user_data = await (await https_fetch("https://plus.character.ai/chat/user/", "GET", {
             'Authorization': `Token ${token}`
-        }));
-        if (!this.#user_data.user.user.id) throw "Not a valid Character AI Token"
+        })).json()
 
+        if (!this.#user_data.user.user.id) throw "Not a valid Character AI Token"
         this.#ws[0] = await open_ws("wss://neo.character.ai/connection/websocket", `edge_rollout=${this.#edge_rollout}; HTTP_AUTHORIZATION="Token ${token}"`, true, this.#user_data.user.user.id, this)
         this.#ws[1] = await open_ws("wss://neo.character.ai/ws/", `edge_rollout=${this.#edge_rollout}; HTTP_AUTHORIZATION="Token ${token}"`, 0, 0, this)
         this.#token = token
