@@ -1,0 +1,20 @@
+{
+  "name": "cainode",
+  "version": "1.0.8",
+  "description": "Unofficial Character.AI API using Node JS",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kevinadhaikal/cainode.git"
+  },
+  "keywords": ["character", "ai", "character-ai", "api", "character-ai-unofficial-api", "characterai-nodejs", "cainode"],
+  "author": "KevinAdhaikal",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kevinadhaikal/cainode/issues"
+  },
+  "homepage": "https://github.com/kevinadhaikal/cainode#readme"
+}
