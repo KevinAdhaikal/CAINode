@@ -50,34 +50,54 @@ function open_ws(url, cookie, userid, this_class) {
     });
 }
 
-function send_ws(ws_con, data, using_json, wait_json_prop_type) {
+function send_ws(ws_con, data, using_json, wait_json_prop_type, wait_ai_response) {
     return new Promise((resolve, reject) => {
         ws_con.on("message", function incoming(message) {
             message = using_json ? JSON.parse(message.toString()) : message.toString()
             if (using_json && wait_json_prop_type) {
                 try {
-                    switch(wait_json_prop_type) {
-                        case 1: { // single character chat
-                            if (message.turn.candidates[0].is_final) {
-                                ws_con.removeListener("message", incoming);
-                                resolve(message)
+                    if (wait_ai_response) {
+                        switch(wait_json_prop_type) {
+                            case 1: { // single character chat
+                                if (!message.turn.author.is_human && message.turn.candidates[0].is_final) {
+                                    ws_con.removeListener("message", incoming);
+                                    resolve(message)
+                                }
+                                break;
                             }
-                            break;
+                            case 2: { // group chat
+                                if (!message["push"].pub.data.turn.author.is_human && message["push"].pub.data.turn.candidates[0].is_final) {
+                                    ws_con.removeListener("message", incoming);
+                                    resolve(message)
+                                }
+                                break;
+                            }
                         }
-                        case 2: { // group chat
-                            if (message["push"].pub.data.turn.candidates[0].is_final) {
-                                ws_con.removeListener("message", incoming);
-                                resolve(message)
+                    } else {
+                        switch(wait_json_prop_type) {
+                            case 1: { // single character chat
+                                if (message.turn.candidates[0].is_final) {
+                                    ws_con.removeListener("message", incoming);
+                                    resolve(message)
+                                }
+                                break;
                             }
-                            break;
+                            case 2: { // group chat
+                                if (message["push"].pub.data.turn.candidates[0].is_final) {
+                                    ws_con.removeListener("message", incoming);
+                                    resolve(message)
+                                }
+                                break;
+                            }
                         }
                     }
+                    
                 }
                 catch(e) {}
             } else {
                 ws_con.removeListener("message", incoming);
-                resolve(using_json ? JSON.parse(message.toString()) : message.toString())
-            } //* nah silahkan coba coba lagi, masih memory leak atau enggak :3
+                resolve(message)
+            }
         })
         ws_con.send(data)
     })
@@ -385,12 +405,12 @@ class CAINode extends events.EventEmitter {
              * Warning: If you want turn manually, you can set manual_turn to true  
              *   
              * Example Usage (automatic turn): `await library_name.character.send_message("Hello World")`  
-             * Example Usage (manual turn): `await library_name.character.send_message("Hello World", false)`  
+             * Example Usage (manual turn): `await library_name.character.send_message("Hello World", true)`  
              * @param {string} message 
              * @param {boolean} manual_turn 
              * @returns {Promise<single_character_object>}
             */
-            send_message: async (message, manual_turn) => {
+            send_message: async (message, manual_turn = false) => {
                 if (!this.#token) throw "Please login first"
                 if (!this.#join_type) throw "You're not connected from Single character Chat"
                 if (this.#join_type == 2) throw "You're connectetd in Group Chat, not Single Character Chat"
@@ -448,7 +468,7 @@ class CAINode extends events.EventEmitter {
                         }
                     },
                     "origin_id": "Android"
-                }), true, Number(!manual_turn))
+                }), true, Number(manual_turn), Number(!manual_turn))
             },
             /**
              * Character will response your message  
@@ -470,7 +490,7 @@ class CAINode extends events.EventEmitter {
                             "user_name": this.#user_data.user.user.username
                         },
                         "origin_id": "Android"
-                    }), true, 1)
+                    }), true, 1, true)
                     
                 } else throw "This function only works when you're connected on Single Chat, not Group chat"
             },
@@ -523,7 +543,7 @@ class CAINode extends events.EventEmitter {
                         }
                     },
                     "origin_id": "Android"
-                }), true, 1)
+                }), true, 1, true)
             },
 
             /**
@@ -570,7 +590,7 @@ class CAINode extends events.EventEmitter {
                         "turn_ids": Array.isArray(turn_id) ? turn_id : [turn_id]
                     },
                     "origin_id": "Android"
-                }), 0, 0)
+                }), 0, 0, false)
                 return true;
             },
 
@@ -599,7 +619,7 @@ class CAINode extends events.EventEmitter {
                         "new_candidate_raw_content": new_message
                     },
                     "origin_id": "Android"
-                }), true, 1)
+                }), true, 1, false)
 
                 if (!result.turn.author.is_human) {
                     await send_ws(this.#ws[1], JSON.stringify({
@@ -612,7 +632,7 @@ class CAINode extends events.EventEmitter {
                             }
                         },
                         "origin_id": "Android"
-                    }), 0, 0)
+                    }), 0, 0, false)
                 }
                 return result;
             }
@@ -753,7 +773,7 @@ class CAINode extends events.EventEmitter {
                 if (!this.#token) throw "Please login first"
                 if (this.#join_type == 2) throw "You are already connected from the room"
 
-                const res = await send_ws(this.#ws[0], `{"subscribe":{"channel":"room:${room_id}"},"id":1}`, true, 0)
+                const res = await send_ws(this.#ws[0], `{"subscribe":{"channel":"room:${room_id}"},"id":1}`, true, 0, false)
                 if (res.error) return 0;
                 this.#current_chat_id = room_id;
                 this.#join_type = 2;
@@ -775,7 +795,7 @@ class CAINode extends events.EventEmitter {
             disconnect: async () => {
                 if (!this.#token) throw "Please login first"
                 if (this.#join_type != 2) throw "You're not connected to any Group Chat"
-                const res = await send_ws(this.#ws[0], `{"unsubscribe":{"channel":"room:${this.#current_chat_id}"},"id":1}`, true, 0)
+                const res = await send_ws(this.#ws[0], `{"unsubscribe":{"channel":"room:${this.#current_chat_id}"},"id":1}`, true, 0, false)
 
                 this.#join_type = 0;
                 this.#current_chat_id = "";
@@ -873,9 +893,9 @@ class CAINode extends events.EventEmitter {
             },
 
             /**
-             * ! Delete group chat  
+             * Delete group chat  
              *   
-             * ? Example usage: `await library_name.group_chat.delete("room_id")`
+             * Example Usage: `await library_name.group_chat.delete("room_id")`
              * 
              * @typedef {object} delete_group_chat
              * @property {string} id
@@ -887,7 +907,7 @@ class CAINode extends events.EventEmitter {
             */
             delete: async (room_id) => {
                 if (!this.#token) throw "Please login first"
-                if (this.#join_type == 2) await send_ws(this.#ws[0], `{"unsubscribe":{"channel":"room:${this.#current_chat_id}"},"id":1}`, true, 0)
+                if (this.#join_type == 2) await send_ws(this.#ws[0], `{"unsubscribe":{"channel":"room:${this.#current_chat_id}"},"id":1}`, true, 0, false)
                 return await (await https_fetch(`https://neo.character.ai/muroom/${this.#join_type == 2 ? this.#current_chat_id : room_id}/`, "DELETE", {'Authorization': `Token ${this.#token}`})).json()
             },
 
@@ -1130,7 +1150,7 @@ class CAINode extends events.EventEmitter {
                         }
                     },
                     "id": 1
-                }), true, 2)
+                }), true, 2, false)
             },
 
             /**
@@ -1160,7 +1180,7 @@ class CAINode extends events.EventEmitter {
                             }
                         },
                         "id": 1
-                    }), true, 2)
+                    }), true, 2, true)
                 } else "This function only works when you're connected on Group Chat, not Single chat"
             },
 
@@ -1196,7 +1216,7 @@ class CAINode extends events.EventEmitter {
                         }
                     },
                     "id": 1
-                }), true, 2)
+                }), true, 2, true)
             },
 
             /**
@@ -1239,7 +1259,7 @@ class CAINode extends events.EventEmitter {
                         }
                     },
                     "id": 1
-                }), true, 2)
+                }), true, 2, false)
             },
             
             /**
@@ -1261,7 +1281,7 @@ class CAINode extends events.EventEmitter {
                         "turn_ids": Array.isArray(turn_id) ? turn_id : [turn_id]
                     },
                     "origin_id": "Android"
-                }), 0, 0)
+                }), 0, 0, false)
                 return true;
             },
 
@@ -1294,7 +1314,7 @@ class CAINode extends events.EventEmitter {
                         }
                     },
                     "id": 1
-                }), true, 2)
+                }), true, 2, false)
 
                 if (!result.push.pub.data.turn.author.is_human) {
                     await send_ws(this.#ws[1], JSON.stringify({
@@ -1307,7 +1327,7 @@ class CAINode extends events.EventEmitter {
                             }
                         },
                         "origin_id": "Android"
-                    }), 0, 0)
+                    }), 0, 0, false)
                 }
             },
 
@@ -1335,7 +1355,7 @@ class CAINode extends events.EventEmitter {
                         }
                     },
                     "id": 1
-                }), true, 2)
+                }), true, 2, true)
             }
         }
 
