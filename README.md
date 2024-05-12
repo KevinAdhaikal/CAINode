@@ -3,8 +3,9 @@ Unofficial Character.AI API using Node JS
 # Install
 `npm install cainode`
 # Example
+- Example Login
 ```js
-const CAINode = require("./index.js");
+const CAINode = require("cainode");
 const Char_AI = new CAINode();
 
 (async function() {
@@ -13,3 +14,4 @@ const Char_AI = new CAINode();
     await Char_AI.logout()
 })();
 ```
+- Character.AI Group Chat Implementation using Discord: https://github.com/kevinadhaikal/caicord
