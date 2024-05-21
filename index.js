@@ -1,12 +1,20 @@
 const WebSocket = require("ws")
 const events = require('events');
 
+function generateRandomUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0,
+            v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
 async function https_fetch(url, method, headers, body) {
     if (body) headers["Content-Length"] = body.length
     return await fetch(url, {
         method: method,
         headers: {
-            "User-Agent": "Character.AI/1.8.6 (React Native; Android)",
+            "User-Agent": "Character.AI/1.8.8 (React Native; Android)",
             "DNT": "1",
             "Sec-GPC": "1",
             "Connection": "keep-alive",
@@ -21,14 +29,6 @@ async function https_fetch(url, method, headers, body) {
         },
         body
     })
-}
-
-function generateRandomUUID() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        var r = Math.random() * 16 | 0,
-            v = c == 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-    });
 }
 
 function open_ws(url, cookie, userid, this_class) {
@@ -120,13 +120,19 @@ class CAINode extends events.EventEmitter {
     #join_type = 0;
     #current_char_id_chat = "";
 
+    /**
+     * Get user settings information. (PRIVATE METHOD)  
+     *   
+     * Example usage: `console.log(await private_user_settings("key", "value"))`
+     * @returns {Promise<object>}
+    */
     constructor() {
         super()
         this.user = {
             /**
              * Get user information Account  
              *   
-             * Example code `console.log(library_name.user.info())`
+             * Example usage: `console.log(library_name.user.info())`
              * 
              * @typedef {object} user
              * @property {object} user
@@ -149,8 +155,350 @@ class CAINode extends events.EventEmitter {
                     throw "Please login first"
                 })() : this.#user_data.user
             },
+            
+            /**
+             * Get user settings information.  
+             *   
+             * Example usage: `console.log(await library_name.user.settings())`
+             * @returns {Promise<object>}
+            */
+            settings: async() => {
+                return !this.#token ? (() => {
+                    throw "Please login first"
+                })() : await (await https_fetch("https://plus.character.ai/chat/user/settings/", "GET", {"Authorization": `Token ${this.#token}`})).json()
+            }
         }
 
+        this.image = {
+            generate_avatar: async (prompt_name) => {
+                return !this.#token ? (() => {
+                    throw "Please login first"
+                })() : await (await https_fetch("https://beta.character.ai/chat/character/generate-avatar-options", "POST", {"Authorization": `Token ${this.#token}`, "Content-Type": "application/json"}, JSON.stringify({
+                    "prompt":prompt_name,
+                    "num_candidates":4,
+                    "model_version":"v1"
+                }))).json()
+            },
+            generate_image: async (prompt_name) => {
+                return !this.#token ? (() => {
+                    throw "Please login first"
+                })() : await (await https_fetch("https://beta.character.ai/chat/generate-image/", "POST", {"Authorization": `Token ${this.#token}`, "Content-Type": "application/json"}, JSON.stringify({"image_description":prompt_name}))).json()
+            }
+        }
+        
+        this.persona = {
+            /**
+             * @typedef {object} persona_info_server
+             * @property {string} status
+             * @property {object} persona
+             * @property {string} persona.external_id
+             * @property {string} persona.title
+             * @property {string} persona.name
+             * @property {string} persona.visibility
+             * @property {boolean} persona.copyable
+             * @property {string} persona.greeting
+             * @property {string} persona.description
+             * @property {string} persona.identifier
+             * @property {string} persona.avatar_file_name
+             * @property {array} persona.songs
+             * @property {boolean} persona.img_gen_enabled
+             * @property {string} persona.base_img_prompt
+             * @property {string} persona.img_prompt_regex
+             * @property {boolean} persona.strip_img_prompt_from_msg
+             * @property {string} persona.definition
+             * @property {string} persona.default_voice_id
+             * @property {null} persona.starter_prompts
+             * @property {boolean} persona.comments_enabled
+             * @property {array} persona.categories
+             * @property {string} persona.user__username
+             * @property {string} persona.participant__name
+             * @property {string} persona.participant__user__username
+             * @property {number} persona.num_interactions
+             * @property {string} persona.voice_id
+            */
+
+            /**
+             * Create persona to your Character.AI Account.  
+             *   
+             * Example usage: `await library_name.persona.create("Name persona", "Description persona")`  
+             * You can use \n to make new line
+             * 
+             * @typedef {object} create_persona
+             * @property {string} status
+             * @property {object} persona
+             * @property {string} persona.external_id
+             * @property {string} persona.title
+             * @property {string} persona.name
+             * @property {string} persona.visibility
+             * @property {boolean} persona.copyable
+             * @property {string} persona.greeting
+             * @property {string} persona.description
+             * @property {string} persona.identifier
+             * @property {string} persona.avatar_file_name
+             * @property {array} persona.songs
+             * @property {boolean} persona.img_gen_enabled
+             * @property {string} persona.base_img_prompt
+             * @property {string} persona.img_prompt_regex
+             * @property {boolean} persona.strip_img_prompt_from_msg
+             * @property {string} persona.definition
+             * @property {string} persona.default_voice_id
+             * @property {string} persona.starter_prompts
+             * @property {boolean} persona.comments_enabled
+             * @property {array} persona.categories
+             * @property {string} persona.user__username
+             * @property {string} persona.participant__name
+             * @property {string} persona.participant__user__username
+             * @property {number} persona.num_interactions
+             * @property {string} persona.voice_id
+             * 
+             * @param {string} name
+             * @param {string} description
+             * @returns {Promise<create_persona>}
+             */
+            create: async (name, description) => {
+                return !this.#token ? (() => {
+                    throw "Please login first"
+                })() : (async () => {
+                    if (!name && !description) throw "Please input correct Name and Description"
+                    return await (await https_fetch("https://beta.character.ai/chat/persona/create/", "POST", {"Authorization": `Token ${this.#token}`, "Content-Type": "application/json"}, JSON.stringify({
+                        "title": name,
+                        "name": name,
+                        "identifier": "id:" + generateRandomUUID(),
+                        "categories": [],
+                        "visibility": "PRIVATE",
+                        "copyable": false,
+                        "description": "This is my persona.",
+                        "greeting": "Hello! This is my persona",
+                        "definition": description,
+                        "avatar_rel_path": "",
+                        "img_gen_enabled": false,
+                        "base_img_prompt": "",
+                        "avatar_file_name": "",
+                        "voice_id": "",
+                        "strip_img_prompt_from_msg": false
+                    }))).json()
+                })()
+            },
+            
+            /**
+             * Set default persona to all chat.  
+             *   
+             * Example usage: `await library_name.persona.set_default("external_persona_id")`
+             * Example usage (unset default persona to all chat): `await library_name.persona.set_default()`
+             * @param {string} external_persona_id
+             * @returns {Promise<boolean>}
+             */
+            set_default: async (external_persona_id = "") => {
+                return !this.#token ? (() => {
+                    throw "Please login first"
+                })() : (async () => {
+                    if ((await this.persona.info(external_persona_id)).error) return false;
+
+                    let result = await this.user.settings()
+                    if (external_persona_id) result["default_persona_id"] = external_persona_id
+                    else delete result.default_persona_id
+                    await https_fetch("https://plus.character.ai/chat/user/update_settings/", "POST", {"Authorization": `Token ${this.#token}`, "Content-Type": "application/json"}, JSON.stringify(result))
+                    return true;
+                })
+            },
+
+            /**
+             * Get list of persona.  
+             *   
+             * Example usage: `console.log(await library_name.persona.list())`
+             * 
+             * @typedef {object} list_persona
+             * @property {object[]} personas
+             * @property {string} personas[].external_id
+             * @property {string} personas[].title
+             * @property {string} personas[].greeting
+             * @property {string} personas[].description
+             * @property {string} personas[].definition
+             * @property {string} personas[].avatar_file_name
+             * @property {string} personas[].visibility
+             * @property {boolean} personas[].copyable
+             * @property {string} personas[].participant__name
+             * @property {number} personas[].participant__num_interactions
+             * @property {number} personas[].user__id
+             * @property {string} personas[].user__username
+             * @property {boolean} personas[].img_gen_enabled
+             * @property {string} personas[].default_voice_id
+             * @property {boolean} personas[].is_persona
+
+             * @returns {Promise<list_persona>}
+            */
+            list: async () => {
+                return !this.#token ? (() => {
+                    throw "Please login first"
+                })() : await (await https_fetch(`https://beta.character.ai/chat/personas/?force_refresh=1`, "GET", {"Authorization": `Token ${this.#token}`})).json()
+            },
+
+            /** 
+             * Get persona information. 
+             *   
+             * Example usage: `console.log(await library_name.persona.info("external_persona_id"))`
+             * 
+             * @typedef {object} persona_info
+             * @property {object} persona
+             * @property {string} persona.external_id
+             * @property {string} persona.title
+             * @property {string} persona.name
+             * @property {string} persona.visibility
+             * @property {boolean} persona.copyable
+             * @property {string} persona.greeting
+             * @property {string} persona.description
+             * @property {string} persona.identifier
+             * @property {string} persona.avatar_file_name
+             * @property {array} persona.songs
+             * @property {boolean} persona.img_gen_enabled
+             * @property {string} persona.base_img_prompt
+             * @property {string} persona.img_prompt_regex
+             * @property {boolean} persona.strip_img_prompt_from_msg
+             * @property {string} persona.definition
+             * @property {string} persona.default_voice_id
+             * @property {null} persona.starter_prompts
+             * @property {boolean} persona.comments_enabled
+             * @property {array} persona.categories
+             * @property {string} persona.user__username
+             * @property {string} persona.participant__name
+             * @property {string} persona.participant__user__username
+             * @property {number} persona.num_interactions
+             * @property {string} persona.voice_id
+             * 
+             * @returns {Promise<persona_info>}
+            */
+            info: async (external_persona_id) => {
+                return !this.#token ? (() => {
+                    throw "Please login first"
+                })() : (async () => {
+                    if (!external_persona_id) throw "Please input external_persona_id"
+                    return await (await https_fetch(`https://beta.character.ai/chat/persona/?id=${external_persona_id}`, "GET", {"Authorization": `Token ${this.#token}`})).json()
+                })()
+            },
+
+            /**
+             * Update existing persona.  
+             *   
+             * Example usage: `await library_name.persona.update("external_persona_id", "edit name", "edit description")`
+             * @param {string} external_persona_id
+             * @param {string} name
+             * @param {string} description
+             * @returns {Promise<persona_info_server>}
+             */
+            update: async (external_persona_id, name, description) => {
+                return !this.#token ? (() => {
+                    throw "Please login first"
+                })() : (async () => {
+                    if (!external_persona_id) throw "Please input external_persona_id"
+                    if ((await this.persona.info(external_persona_id)).error) return {status: "ERR_NOT_FOUND"}
+
+                    let get_info = await this.persona.info(external_persona_id)
+                    return await (await https_fetch(`https://plus.character.ai/chat/persona/update/`, "POST", {"Authorization": `Token ${this.#token}`, "Content-Type": "application/json"}, JSON.stringify({
+                        "external_id": external_persona_id,
+                        "title": get_info.persona.title,
+                        "greeting": "Hello! This is my persona",
+                        "description": "This is my persona.",
+                        "definition": description ? description : get_info.persona.definition,
+                        "avatar_file_name": get_info.persona.avatar_file_name,
+                        "visibility": "PRIVATE",
+                        "copyable": false,
+                        "participant__name": get_info.persona.participant__name,
+                        "participant__num_interactions": 0,
+                        "user__id": this.#user_data.user.user.id,
+                        "user__username": get_info.persona.user__username,
+                        "img_gen_enabled": false,
+                        "default_voice_id": "",
+                        "is_persona": true,
+                        "name": name ? name : get_info.persona.name,
+                        "avatar_rel_path": get_info.persona.avatar_file_name,
+                        "enabled": false
+                    }))).json()
+                })
+            },
+
+            /**
+             * Delete existing persona.  
+             *   
+             * Example usage: `await library_name.persona.delete("external_persona_id")`
+             * @param {string} external_persona_id
+             * @returns {Promise<persona_info_server>}
+             */
+            delete: async (external_persona_id) => {
+                return !this.#token ? (() => {
+                    throw "Please login first"
+                })() : (async () => {
+                    if (!external_persona_id) throw "Please input external_persona_id"
+                    if ((await this.persona.info(external_persona_id)).error) return {status: "ERR_NOT_FOUND"}
+
+                    let result_setting = await this.user.settings()
+                    delete result_setting.personaOverrides[external_persona_id]
+                    await https_fetch("https://plus.character.ai/chat/user/update_settings/", "POST", {"Authorization": `Token ${this.#token}`, "Content-Type": "application/json"}, JSON.stringify(result))
+
+                    let get_info = await this.persona.info(external_persona_id)
+                    return await (await https_fetch(`https://plus.character.ai/chat/persona/update/`, "POST", {"Authorization": `Token ${this.#token}`, "Content-Type": "application/json"}, JSON.stringify({
+                        "external_id": external_persona_id,
+                        "title": get_info.persona.title,
+                        "greeting": "Hello! This is my persona",
+                        "description": "This is my persona.",
+                        "definition": get_info.persona.definition,
+                        "avatar_file_name": get_info.persona.avatar_file_name,
+                        "visibility": "PRIVATE",
+                        "copyable": false,
+                        "participant__name": get_info.persona.participant__name,
+                        "participant__num_interactions": 0,
+                        "user__id": this.#user_data.user.user.id,
+                        "user__username": get_info.persona.user__username,
+                        "img_gen_enabled": false,
+                        "default_voice_id": "",
+                        "is_persona": true,
+                        "archived": true,
+                        "name": get_info.persona.name
+                    }))).json()
+                })
+            },
+
+            /**
+             * Set persona for Character.  
+             *   
+             * Example usage: `await library_name.persona.set_character("character_id", "external_persona_id")`  
+             * Example usage (unset persona for Character): `await library_name.persona.set_character("character_id")`
+             * @param {string} character_id
+             * @param {string} external_persona_id
+             * @returns {Promise<boolean>}
+             */
+            set_character: async(character_id, external_persona_id = "") => {
+                return !this.#token ? (() => {
+                    throw "Please login first"
+                })() : (async () => {
+                    if (!character_id) throw "Please input character_id"
+                    if ((await this.persona.info(external_persona_id)).error) return false;
+                    
+                    let result = await this.user.settings()
+
+                    if (external_persona_id) {
+                        if (!Object.values(result.personaOverrides).length) result.personaOverrides = {}
+                        result.personaOverrides[character_id] = external_persona_id
+                    } else delete result.personaOverrides[character_id]
+
+                    await https_fetch("https://plus.character.ai/chat/user/update_settings/", "POST", {"Authorization": `Token ${this.#token}`, "Content-Type": "application/json"}, JSON.stringify(result))
+
+                    return true;
+                })
+            }
+        }
+
+        this.explore = {
+            featured: async () => {
+                return await (await https_fetch("https://neo.character.ai/recommendation/v1/featured", "GET")).json()
+            },
+            for_you: async () => {
+                return await (await https_fetch("https://neo.character.ai/recommendation/v1/user", "GET")).json()
+            },
+            character_categories: async () => {
+                return await (await https_fetch("https://beta.character.ai/chat/curated_categories/characters/", "GET")).json()
+            },
+        }
+        
         this.character = {
             /**
              * @typedef {object} single_character_object
@@ -169,6 +517,7 @@ class CAINode extends events.EventEmitter {
              * @property {string} turn.candidates[].candidate_id
              * @property {string} turn.candidates[].create_time
              * @property {string} turn.candidates[].raw_content
+             * @property {string} turn.candidates[].tti_image_rel_path
              * @property {boolean} turn.candidates[].is_final
              * @property {string} turn.primary_candidate_id
              * @property {object} chat_info
@@ -194,6 +543,7 @@ class CAINode extends events.EventEmitter {
              * @property {string} turn.candidates[].candidate_id
              * @property {string} turn.candidates[].create_time
              * @property {string} turn.candidates[].raw_content
+             * @property {string} turn.candidates[].tti_image_rel_path
              * @property {object} turn.candidates[].editor
              * @property {string} turn.candidates[].editor.author_id
              * @property {string} turn.candidates[].editor.name
@@ -205,6 +555,62 @@ class CAINode extends events.EventEmitter {
              * @property {string} command
              * @property {string} request_id
             */
+
+            /**
+             * Get Character votes. (1 character)  
+             *   
+             * Example usage: `console.log(await library_name.character.votes("character_id"))`  
+             * 
+             * @param {string} character_id - A single character ID.
+             * 
+             * @typedef {object} Votes1
+             * @property {string} status - The status of the request.
+             * @property {number} upvotes - The number of upvotes for the character.
+             * 
+             * @returns {Promise<Votes1>}
+            */
+            votes: async (character_id) => {
+                return !this.#token ? (() => {
+                    throw "Please login first"
+                })() : await (await https_fetch(`https://beta.character.ai/chat/character/${character_id}/votes/`, "GET", {"Authorization": `Token ${this.#token}`})).json();
+            },
+            /**
+             * Get Character votes. (more than 1 character)
+             * 
+             * Example usage: `console.log(await library_name.character.votes_array(["character_id_1", "character_id_2", ...]))`  
+             * 
+             * @param {array} character_id - An array of character IDs.
+             * 
+             * @typedef {object} Votes2
+             * @property {string} status - The status of the request.
+             * @property {object} upvotes_per_character - The number of upvotes per character.
+             * 
+             * @returns {Promise<Votes2>}
+             */
+            votes_array: async (character_id) => {
+                return !this.#token ? (() => {
+                    throw "Please login first"
+                })() : await (await https_fetch(`https://beta.character.ai/chat/characters/votes/`, "POST", {"Authorization": `Token ${this.#token}`}, JSON.stringify({"character_ids": character_id}))).json();
+            },
+
+            /**
+             * Character votes.  
+             *   
+             * Example usage (like): `await library_name.character.vote("character_id", true);`  
+             * Example usage (dislike): `await library_name.character.vote("character_id", true);`  
+             * Example usage (cancel vote): `await library_name.character.vote("character_id", null);`  
+             * @param {string} character_id 
+             * @param {boolean | null} vote 
+             * @returns {Promise<void>}
+             */
+            vote: async(character_id, vote = null) => {
+                return !this.#token ? (() => {
+                    throw "Please login first"
+                })() : await (await https_fetch(`https://plus.character.ai/chat/character/vote/`, "POST", {"Authorization": `Token ${this.#token}`}, JSON.stringify({
+                    "external_id":character_id,
+                    "vote":vote
+                }))).json();
+            },
 
             /**
              * Search character by name  
@@ -406,11 +812,14 @@ class CAINode extends events.EventEmitter {
              *   
              * Example Usage (automatic turn): `await library_name.character.send_message("Hello World")`  
              * Example Usage (manual turn): `await library_name.character.send_message("Hello World", true)`  
-             * @param {string} message 
-             * @param {boolean} manual_turn 
+             * Example Usage with image (automatic turn): `await library_name.group_chat.send_message("Your Message", false, "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Example_image.svg/600px-Example_image.svg.png")`  
+             * Example Usage with image (manual turn): `await library_name.group_chat.send_message("Your Message", true, "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Example_image.svg/600px-Example_image.svg.png")`
+             * @param {string} message
+             * @param {boolean} manual_turn
+             * @param {string} image_url_path
              * @returns {Promise<single_character_object>}
             */
-            send_message: async (message, manual_turn = false) => {
+            send_message: async (message, manual_turn = false, image_url_path = "") => {
                 if (!this.#token) throw "Please login first"
                 if (!this.#join_type) throw "You're not connected from Single character Chat"
                 if (this.#join_type == 2) throw "You're connectetd in Group Chat, not Single Character Chat"
@@ -438,7 +847,8 @@ class CAINode extends events.EventEmitter {
                             },
                             "candidates": [{
                                 "candidate_id": turn_key,
-                                "raw_content": message
+                                "raw_content": message,
+                                ...image_url_path ? { tti_image_rel_path: image_url_path } : {}
                             }],
                             "primary_candidate_id": turn_key
                         },
@@ -468,7 +878,7 @@ class CAINode extends events.EventEmitter {
                         }
                     },
                     "origin_id": "Android"
-                }), true, Number(manual_turn), Number(!manual_turn))
+                }), true, Number(!manual_turn), Number(!manual_turn))
             },
             /**
              * Character will response your message  
@@ -659,6 +1069,7 @@ class CAINode extends events.EventEmitter {
              * @property {string} push.pub.data.turn.candidates[].candidate_id
              * @property {string} push.pub.data.turn.candidates[].create_time
              * @property {string} push.pub.data.turn.candidates[].raw_content
+             * @property {string} push.pub.data.turn.candidates[].tti_image_rel_path
              * @property {boolean} push.pub.data.turn.candidates[].is_final
              * @property {string} push.pub.data.turn.primary_candidate_id
              * @property {object} push.pub.data.chat_info
@@ -688,6 +1099,7 @@ class CAINode extends events.EventEmitter {
              * @property {string} push.pub.data.turn.candidates[].candidate_id
              * @property {string} push.pub.data.turn.candidates[].create_time
              * @property {string} push.pub.data.turn.candidates[].raw_content
+             * @property {string} push.pub.data.turn.candidates[].tti_image_rel_path
              * @property {string} push.pub.data.turn.candidates[].base_candidate_id
              * @property {object} push.pub.data.turn.candidates[].editor
              * @property {string} push.pub.data.turn.candidates[].editor.author_id
@@ -1114,11 +1526,14 @@ class CAINode extends events.EventEmitter {
             /**
              * Send message to Group Chat  
              *   
-             * Example Usage: `await library_name.group_chat.send_message("Your Message")`
+             * Example Usage: `await library_name.group_chat.send_message("Your Message")`  
+             * Example Usage with image: `await library_name.group_chat.send_message("Your Message", "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Example_image.svg/600px-Example_image.svg.png")`
              * @param {string} message
+             * @param {string} image_url_path
              * @returns {Promise<group_chat_object>}
              */
-            send_message: async(message) => {
+            
+            send_message: async(message, image_url_path = "") => {
                 let turn_key = this.#join_type ? generateRandomUUID() : ""
                 return await send_ws(this.#ws[0], JSON.stringify({
                     "rpc": {
@@ -1142,7 +1557,8 @@ class CAINode extends events.EventEmitter {
                                     },
                                     "candidates": [{
                                         "candidate_id": turn_key,
-                                        "raw_content": message
+                                        "raw_content": message,
+                                        ...image_url_path ? { tti_image_rel_path: image_url_path } : {}
                                     }],
                                     "primary_candidate_id": turn_key
                                 }
@@ -1420,11 +1836,11 @@ class CAINode extends events.EventEmitter {
      * @returns {Promise<boolean>}
     */
     async login(token) {
-        if (!this.#edge_rollout) this.#edge_rollout = (await https_fetch("https://character.ai/", "GET")).headers.getSetCookie()[0].split("; ")[0].split("=")[1]
+        if (!this.#edge_rollout) this.#edge_rollout = (await https_fetch("https://character.ai/", "GET")).headers.getSetCookie()[1].split("; ")[0].split("=")[1]
         this.#user_data = await (await https_fetch("https://plus.character.ai/chat/user/", "GET", {
             'Authorization': `Token ${token}`
         })).json()
-
+        
         if (!this.#user_data.user.user.id) throw "Not a valid Character AI Token"
         this.#ws[0] = await open_ws("wss://neo.character.ai/connection/websocket", `edge_rollout=${this.#edge_rollout}; HTTP_AUTHORIZATION="Token ${token}"`, this.#user_data.user.user.id, this)
         this.#ws[1] = await open_ws("wss://neo.character.ai/ws/", `edge_rollout=${this.#edge_rollout}; HTTP_AUTHORIZATION="Token ${token}"`, 0, this)
