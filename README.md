@@ -44,11 +44,31 @@ Unofficial Character.AI API using Node JS
      - [character.edit_message](#characteredit-message)
    - [group_chat](#group-chatlist)
      - [group_chat.list](#group-chatlist)
+     - [group_chat.connect](#group-chatconnect)
+     - [group_chat.disconnect](#group-chatdisconnect)
+     - [group_chat.create](#group-chatcreate)
+     - [group_chat.delete](#group-chatdelete)
+     - [group_chat.rename](#group-chatrename)
+     - [group_chat.join_group_invite](#group-chatjoin-group-invite)
+     - [group_chat.char_add](#group-chatchar-add)
+     - [group_chat.char_remove](#group-chatchar-remove)
+     - [group_chat.send_message](#group-chatsend-message)
+     - [group_chat.generate_turn](#group-chatgenerate-turn)
+     - [group_chat.generate_turn_candidate](#group-chatgenerate-turn-candidate)
+     - [group_chat.reset_conversation](#group-chatreset-conversation)
+     - [group_chat.delete_message](#group-chatdelete-message)
+     - [group_chat.edit_message](#group-chatedit-message)
+     - [group_chat.select_turn](#group-chatselect-turn)
+   - [chat](#chathistory-chat-turns)
+     - [chat.history_chat_turns](#chathistory-chat-turns)
+- [Issues](#issues)
 
 ## Installation  
 Start installing package using npm by sending this command in your terminal.
 
-`npm install cainode`  
+```bash
+npm install cainode
+```
 
 ## Example usage  
 ```js  
@@ -451,6 +471,7 @@ await client.character.edit_message(candidate_id, turn_id, new_message);
 | --- | --- | --- | --- | 
 | candidate_id | `true` | `String` | 
 | turn_id | `true` | `String` | `turn_id` or `message_id` from the character. |
+| new_message | `true` | `String` | New character message |
 [Back to Top](#cainode)
 
 
@@ -530,7 +551,124 @@ await client.group_chat.join_group_invite(invite_code);
 ```
 | Param | Require | Type | Description |
 | --- | --- | --- | --- | 
-| invite_code | `true` | `String` | The chat room invite code. |
+| invite_code | `true` | `String` | The chat room miinvite code. |
 [Back to Top](#cainode)
 
-## 
+## group_chat.char_add()
+Add a character with `character_id` to the chat room.
+
+```js
+await client.group_chat.char_add(character_id);
+```
+| Param | Require | Type | Description |
+| --- | --- | --- | --- | 
+| character_id | `true` | `String` | Character id to be added to the chat room. |
+[Back to Top](#cainode)
+
+## group_chat.char_remove()
+Remove a character with `character_id` from the chat room.
+
+```js
+await client.group_chat.char_remove(character_id);
+```
+| Param | Require | Type | Description |
+| --- | --- | --- | --- | 
+| character_id | `true` | `String` | Character id to be removed from the chat room. |
+[Back to Top](#cainode)
+
+## group_chat.send_message()
+Send message to character in chat room.
+
+```js
+await client.character.send_message(message, image_url);
+```
+| Param | Require | Type | Description |
+| --- | --- | --- | --- | 
+| message | `true` | `String` | Message content. |
+| image_url | `false` | `String` | The image content that the character will see, must be a url and not a file type or a file with a type other than image. |
+[Back to Top](#cainode)
+
+## group_chat.generate_turn()
+Generating message response character from chat room.
+
+```js
+await client.group_chat.generate_turn();
+```
+| Param | Require | Type | Description |
+| --- | --- | --- | --- | 
+| none | `false` | `null` | Generate message response |
+[Back to Top](#cainode)
+
+## group_chat.generate_turn_candidate()
+Regenerate character message.
+
+```js
+await client.group_chat.generate_turn_candidate(turn_id);
+```
+| Param | Require | Type | Description |
+| --- | --- | --- | --- | 
+| turn_id | `true` | `String` | `turn_id` or `message_id` from the character. |
+[Back to Top](#cainode)
+
+## group_chat.reset_conversation()
+Reset conversation in chat room.
+
+```js
+await client.group_chat.reset_conversation();
+```
+| Param | Require | Type | Description |
+| --- | --- | --- | --- | 
+| none | `false` | `null` | Reset conversation. |
+[Back to Top](#cainode)
+
+## group_chat.delete_message()
+Delete character message.
+
+```js
+await client.group_chat.delete_message(turn_id);
+```
+| Param | Require | Type | Description |
+| --- | --- | --- | --- | 
+| turn_id | `true` | `String` | `turn_id` or `message_id` from the character. |
+[Back to Top](#cainode)
+
+## group_chat.edit_message()
+Edit character message in chat room.
+
+```js
+awit client.group_chat.edit_message(candidate_id, turn_id, new_message);
+```
+| Param | Require | Type | Description |
+| --- | --- | --- | --- | 
+| candidate_id | `true` | `String` | 
+| turn_id | `true` | `String` | `turn_id` or `message_id` from the character. |
+| new_message | `true` | `String` | New character message |
+[Back to Top](#cainode)
+
+## group_chat.select_turn()
+Select the turn of character chat by yourself.
+
+```js
+await client.group_chat.select_turn(turn_id);
+```
+| Param | Require | Type | Description |
+| --- | --- | --- | --- | 
+| turn_id | `true` | `String` | `turn_id` or `message_id` from the character. |
+[Back to Top](#cainode)
+
+## chat.history_chat_turns()
+Get a history chat from group or single chat.
+
+```js
+await client.chat.history_chat_turns(chat_id);
+```
+| Param | Require | Type | Description |
+| --- | --- | --- | --- | 
+| chat_id | `true` | `String` | Group chat or single chat ID. |
+[Back to Top](#cainode)
+
+
+# Issues
+Feel free to open the issue, I hope this documentation can help you maximally and make it easier for you to use this package.
+
+> *Documentation written by [ZTRdiamond](https://github.com/ZTRdiamond)*
