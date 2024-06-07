@@ -660,7 +660,7 @@ class CAINode extends events.EventEmitter {
              * 
              * @returns {Promise<char2>}
             */
-            serach_suggest: async (name) => {
+            search_suggest: async (name) => {
                 return !this.#token ? (() => {
                     throw "Please login first"
                 })() : await (await https_fetch(`https://beta.character.ai/chat/characters/suggest/?query=${name}`, "GET", {
