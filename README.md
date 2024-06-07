@@ -147,6 +147,7 @@ await client.logout();
 | Param | Require | Type | Description |  
 | --- | --- | --- | --- |  
 | none | `false` | `null` | Used for client logout from character ai. |
+
 [Back to Top](#cainode)
 
 ## user.info()
