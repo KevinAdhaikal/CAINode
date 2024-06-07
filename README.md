@@ -152,7 +152,7 @@ await client.logout();
 | --- | --- | --- | --- |  
 | none | `false` | `null` | Used for client logout from character ai. |
 
-> [Back to Top](#cainode)
+[Back to Top](#cainode)
 
 
 ## user.info()
