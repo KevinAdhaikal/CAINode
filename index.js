@@ -132,7 +132,7 @@ class User_Class {
     }
 
     /**
-     * Get your current information account.  
+     * Get your account information data.  
      *   
      * Example: `library_name.user.info`
      * 
@@ -143,7 +143,7 @@ class User_Class {
     }
 
     /**
-     * Get your current settings information account.  
+     * Get your account settings information data.  
      *   
      * Example: `await library_name.user.settings()`
      * 
@@ -1736,8 +1736,8 @@ class CAINode extends events.EventEmitter {
     /**
      * User function list  
      *   
-     * - `info`: Get your current information account.  
-     * - `settings()`: Get your current settings information account.
+     * - `info`: Get your account information data.  
+     * - `settings()`: Get your account settings information data.
     */
     user = new User_Class(this.#prop) // User Class
     
