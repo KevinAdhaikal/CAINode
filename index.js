@@ -170,7 +170,7 @@ class Image_Class {
      *   
      * Example: `await library_name.image.generate_avatar("your prompt")`
      * 
-     * @param {string} prompt_name 
+     * @param {string} prompt_name
      * @returns {Promise<{ result: [{ prompt: string, url: string }] }>}
     */
     async generate_avatar(prompt_name) {
@@ -187,7 +187,7 @@ class Image_Class {
      *   
      * Example: `await library_name.image.generate_image("your prompt")`
      * 
-     * @param {string} prompt_name 
+     * @param {string} prompt_name
      * @returns {Promise<{ image_rel_path: string }>}
     */
     async generate_image(prompt_name) {
@@ -255,8 +255,8 @@ class Persona_Class {
      *   
      * Example: `await library_name.persona.create("Persona Name", "Description")`
      * 
-     * @param {string} name 
-     * @param {string} description 
+     * @param {string} name
+     * @param {string} description
      * @returns {Promise<{status: string, persona: Persona}>}
     */
     async create(name, description) {
@@ -780,7 +780,7 @@ class Character_Class {
      * 
      * @param {string} char_id 
      * @returns {Promise<CharacterRecentList>}
-     */
+    */
     async connect(char_id) {
         if (!this.#prop.token) throw "Please login first"
         if (this.#prop.join_type == 2) throw "You're already connectetd in Group Chat, please disconnect first"
@@ -1005,7 +1005,7 @@ class Character_Class {
      * 
      * @param {string} turn_id
      * @returns {Promise<boolean>}
-     */
+    */
     async delete_message(turn_id) {
         if (!this.#prop.token) throw "Please login first"
         await send_ws(this.#prop.ws[1], JSON.stringify({
@@ -1232,13 +1232,14 @@ class GroupChat_Class {
      * Example: `await library_name.group_chat.list()`
      * 
      * @returns {Promise<GroupChatListInfo>}
-     */
+    */
     async list() {
         if (!this.#prop.token) throw "Please login first"
         return await (await https_fetch("https://neo.character.ai/murooms/?include_turns=false", "GET", {
             'Authorization': `Token ${this.#prop.token}`
         })).json()
     }
+
     /**
      * Connecting to group chat by the Room ID.  
      *   
@@ -1246,7 +1247,7 @@ class GroupChat_Class {
      * 
      * @param {string} room_id
      * @returns {Promise<GroupChatConnectInfo>}
-     */
+    */
     async connect(room_id) {
         if (!this.#prop.token) throw "Please login first"
         if (this.#prop.join_type == 2) throw "You are already connected from the room"
@@ -1307,7 +1308,7 @@ class GroupChat_Class {
      * 
      * @param {string} room_id 
      * @returns {Promise<GroupChatDeleteInfo>}
-     */
+    */
     async delete(room_id) {
         if (!this.#prop.token) throw "Please login first"
         if (this.#prop.join_type == 2) await send_ws(this.#prop.ws[0], `{"unsubscribe":{"channel":"room:${this.#prop.current_chat_id}"},"id":1}`, true, 0, false)
@@ -1817,7 +1818,7 @@ class CAINode extends events.EventEmitter {
      * Chat function list  
      *   
      * - `history_chat_turns()`: Get a history chat from group or single chat.
-     */
+    */
     chat = new Chat_Class(this.#prop) // Chat Class
 
     /**
@@ -1827,7 +1828,7 @@ class CAINode extends events.EventEmitter {
      * 
      * @param {string} token
      * @returns {Promise<boolean>}
-     */
+    */
     async login(token) {
         this.#prop.edge_rollout = (await https_fetch("https://character.ai/", "GET")).headers.getSetCookie()[1].split("; ")[0].split("=")[1]
         this.#prop.user_data = await (await https_fetch("https://plus.character.ai/chat/user/", "GET", {
@@ -1850,7 +1851,7 @@ class CAINode extends events.EventEmitter {
      * Example: `library_name.logout()`
      * 
      * @returns {boolean}
-     */
+    */
     logout() {
         if (!this.#prop.ws[0] && !this.#prop.ws[1]) return false;
         
