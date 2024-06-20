@@ -1825,7 +1825,8 @@ class CAINode extends events.EventEmitter {
      * Start client initialization with login.  
      *   
      * Example: `await library_name.login("Character.AI Token")`
-     * 
+     *   
+     * @see {@link https://github.com/KevinAdhaikal/CAINode?tab=readme-ov-file#login|here} for tutorial how to get Character.AI Token.
      * @param {string} token
      * @returns {Promise<boolean>}
     */
