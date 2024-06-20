@@ -30,8 +30,8 @@ async function https_fetch(url, method, headers = {}, body_data = "") {
 }
 
 function open_ws(url, cookie, userid, this_class) {
-    return new Promise((resolve, reject) => {
-        let ws_con = new WebSocket(url, {
+    return new Promise((resolve) => {
+        const ws_con = new WebSocket(url, {
             headers: {
                 Cookie: cookie
             }
@@ -40,7 +40,7 @@ function open_ws(url, cookie, userid, this_class) {
             if (userid) ws_con.send(`{"connect":{"name":"js"},"id":1}{"subscribe":{"channel":"user#${userid}"},"id":1}`)
             resolve(ws_con)
         })
-        ws_con.on('message', async function(message) {
+        ws_con.on('message', function(message) {
             message = message.toString()
             if (message === "{}") ws_con.send("{}")
             else this_class.emit("message", message)
