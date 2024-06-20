@@ -1,4 +1,3 @@
-
 # CAINode  
 A lighweight Unofficial Character.AI API using NodeJS, It does not require a puppeteer to interact with c.ai because the interaction is done with websocket and fetch.
 
@@ -159,7 +158,7 @@ await client.logout();
 Get your account information data.
 
 ```js
-client.user.info();
+client.user.info;
 ```
 | Param | Require | Type | Description |  
 | --- | --- | --- | --- |  
@@ -556,27 +555,27 @@ await client.group_chat.list();
 
 
 ## group_chat.connect()
-Connecting to chat room by the `room_id`, btw you can't connect the chat room before you create it.
+Connecting to group chat by the `room_id`, btw you can't connect the group chat before you create it.
 
 ```js
 await client.group_chat.connect(room_id);
 ```
 | Param | Require | Type | Description |
 | --- | --- | --- | --- | 
-| room_id | `true` | `String` | Your chat room id. |
+| room_id | `true` | `String` | Your group chat id. |
 
 [Back to Top](#cainode)
 
 
 ## group_chat.disconnect()
-Disconnecting from chat room by the `room_id`.
+Disconnecting from group chat by the `room_id`.
 
 ```js
 await client.group_chat.disconnect(room_id);
 ```
 | Param | Require | Type | Description |
 | --- | --- | --- | --- | 
-| room_id | `true` | `String` | Your chat room id. |
+| room_id | `true` | `String` | Your group chat id. |
 
 [Back to Top](#cainode)
 
@@ -590,79 +589,79 @@ await client.group_chat.create(title_room, character_id);
 | Param | Require | Type | Description |
 | --- | --- | --- | --- | 
 | title_room | `true` | `String` | Your custom title room name. |
-| character_id | `true` | `String` | Your character id will be added to the chat room. |
+| character_id | `true` | `String` | Your character id will be added to the group chat. |
 
 [Back to Top](#cainode)
 
 
 ## group_chat.delete()
-Delete chat room.
+Delete group chat.
 
 ```js
 await client.group_chat.delete(room_id);
 ```
 | Param | Require | Type | Description |
 | --- | --- | --- | --- | 
-| room_id | `true` | `String` | Your chat room id. |
+| room_id | `true` | `String` | Your group chat id. |
 
 [Back to Top](#cainode)
 
 
 ## group_chat.rename()
-Rename chat room.
+Rename group chat.
 
 ```js
 await client.group_chat.rename(new_name, room_id);
 ```
 | Param | Require | Type | Description |
 | --- | --- | --- | --- | 
-| new_name | `true` | `String` | New name for your chat room. |
-| room_id | `true` | `String` | Your chat room id. |
+| new_name | `true` | `String` | New name for your group chat. |
+| room_id | `true` | `String` | Your group chat id. |
 
 [Back to Top](#cainode)
 
 
 ## group_chat.join_group_invite()
-Joining chat room using invite code.
+Joining group chat using invite code.
 
 ```js
 await client.group_chat.join_group_invite(invite_code);
 ```
 | Param | Require | Type | Description |
 | --- | --- | --- | --- | 
-| invite_code | `true` | `String` | The chat room miinvite code. |
+| invite_code | `true` | `String` | The group chat miinvite code. |
 
 [Back to Top](#cainode)
 
 
 ## group_chat.char_add()
-Add a character with `character_id` to the chat room.
+Add a character with `character_id` to the group chat.
 
 ```js
 await client.group_chat.char_add(character_id);
 ```
 | Param | Require | Type | Description |
 | --- | --- | --- | --- | 
-| character_id | `true` | `String` | Character id to be added to the chat room. |
+| character_id | `true` | `String` | Character id to be added to the group chat. |
 
 [Back to Top](#cainode)
 
 
 ## group_chat.char_remove()
-Remove a character with `character_id` from the chat room.
+Remove a character with `character_id` from the group chat.
 
 ```js
 await client.group_chat.char_remove(character_id);
 ```
 | Param | Require | Type | Description |
 | --- | --- | --- | --- | 
-| character_id | `true` | `String` | Character id to be removed from the chat room. |
+| character_id | `true` | `String` | Character id to be removed from the group chat. |
 
 [Back to Top](#cainode)
 
 
 ## group_chat.send_message()
-Send message to character in chat room.
+Send message to character in group chat.
 
 ```js
 await client.character.send_message(message, image_url);
@@ -676,7 +675,7 @@ await client.character.send_message(message, image_url);
 
 
 ## group_chat.generate_turn()
-Generating message response character from chat room.
+Generating message response character from group chat.
 
 ```js
 await client.group_chat.generate_turn();
@@ -702,7 +701,7 @@ await client.group_chat.generate_turn_candidate(turn_id);
 
 
 ## group_chat.reset_conversation()
-Reset conversation in chat room.
+Reset conversation in group chat.
 
 ```js
 await client.group_chat.reset_conversation();
@@ -728,10 +727,10 @@ await client.group_chat.delete_message(turn_id);
 
 
 ## group_chat.edit_message()
-Edit character message in chat room.
+Edit character message in group chat.
 
 ```js
-awit client.group_chat.edit_message(candidate_id, turn_id, new_message);
+await client.group_chat.edit_message(candidate_id, turn_id, new_message);
 ```
 | Param | Require | Type | Description |
 | --- | --- | --- | --- | 
