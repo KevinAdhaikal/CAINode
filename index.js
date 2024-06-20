@@ -1189,6 +1189,7 @@ class GroupChat_Class {
 
     /**
      * @typedef {object} GroupChatInfo
+     * @property {object} push
      * @property {string} push.channel
      * @property {object} push.pub
      * @property {object} push.pub.data
