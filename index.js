@@ -1823,7 +1823,7 @@ class CAINode extends events.EventEmitter {
     /**
      * Start client initialization with login.  
      *   
-     * Example: `library_name.login("Character.AI Token")`
+     * Example: `await library_name.login("Character.AI Token")`
      * 
      * @param {string} token
      * @returns {Promise<boolean>}
