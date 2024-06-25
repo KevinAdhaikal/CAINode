@@ -12,6 +12,7 @@ A lighweight Unofficial Character.AI API using NodeJS, It does not require a pup
    - [logout](#logout)  
    - [User](#userinfo)
      - [user.info](#userinfo)
+     - [user.change_info](#userchange_info)
      - [user.settings](#usersettings)
    - [image](#imagegenerate_avatar)
      - [image.generate_avatar](#imagegenerate_avatar)
@@ -142,7 +143,7 @@ await client.login("YOUR_CHARACTER_AI_TOKEN");
 
 
 ## logout()
-Logout from the client
+Logout from the client.
 
 ```js
 await client.logout();
@@ -155,7 +156,7 @@ await client.logout();
 
 
 ## user.info()
-Get your account information data.
+Get current information account.
 
 ```js
 client.user.info;
@@ -167,8 +168,24 @@ client.user.info;
 [Back to Top](#cainode)
 
 
+## user.change_info()
+Change current information account.
+
+```js
+await client.user.change_info();
+```
+| Param | Require | Type | Description | 
+| --- | --- | --- | --- | 
+| username | `false` | `string` | Change your old username to new username. |
+| name | `false` | `string` | Change your old name to new name. |
+| avatar_rel_path | `false` | `string` | Change your old avatar_rel_path link to new avatar_rel_path link.<br>Warning: avatar_rel_path image link must be generated/uploaded to Character.AI server. |
+| bio | `false` | `string` | Change your old bio to new bio. |
+
+[Back to Top](#cainode)
+
+
 ## user.settings()
-Get your account settings information data.
+Get account settings information data.
 
 ```js
 await client.user.settings();
