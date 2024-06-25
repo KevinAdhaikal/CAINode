@@ -16,7 +16,7 @@ async function https_fetch(url, method, headers = {}, body_data = "") {
             "User-Agent": "Character.AI/1.8.8 (React Native; Android)",
             "DNT": "1",
             "Sec-GPC": "1",
-            "Connection": "keep-alive",
+            "Connection": "close",
             "Upgrade-Insecure-Requests": "1",
             "Sec-Fetch-Dest": "document",
             "Sec-Fetch-Mode": "navigate",
@@ -114,25 +114,44 @@ class User_Class {
     /**
      * @typedef {object} UserInfo
      * @property {object} user
-     * @property {string} user.username
-     * @property {number} user.id
-     * @property {string} user.first_name
-     * @property {object} user.account
-     * @property {string} user.account.name
-     * @property {string} user.account.avatar_type
-     * @property {string} user.account.onboarding_complete
-     * @property {string} user.account.avatar_file_name
-     * @property {string} user.account.mobile_onboarding_complete
-     * @property {boolean} user.is_staff
-     * @property {object | string[] | string | undefined} user.subscription
+     * @property {object} user.user
+     * @property {string} user.user.username
+     * @property {number} user.user.id
+     * @property {string} user.user.first_name
+     * @property {object} user.user.account
+     * @property {string} user.user.account.name
+     * @property {string} user.user.account.avatar_type
+     * @property {string} user.user.account.onboarding_complete
+     * @property {string} user.user.account.avatar_file_name
+     * @property {string} user.user.account.mobile_onboarding_complete
+     * @property {boolean} user.user.is_staff
+     * @property {object | string[] | string | undefined} user.user.subscription
+     * @property {boolean} user.is_human
+     * @property {string} user.name
+     * @property {string} user.email
+     * @property {boolean} user.needs_to_acknowledge_policy
+     * @property {string | undefined} user.suspended_until
+     * @property {string[]} user.hidden_characters
+     * @property {string[]} user.blocked_users
+     * @property {string} user.bio
+     * @property {object} user.interests
+     * @property {string[]} user.interests.selected
     */
+
+    /**
+     * @typedef {object} UserSettings
+     * @property {string | undefined} default_persona_id
+     * @property {Record<string, string> | undefined} voiceOverrides
+     * @property {Record<string, string> | undefined} personaOverrides
+    */
+
     #prop;
     constructor(prop) {
         this.#prop = prop
     }
 
     /**
-     * Get your current information account.  
+     * Get current information account.  
      *   
      * Example: `library_name.user.info`
      * 
@@ -143,15 +162,46 @@ class User_Class {
     }
 
     /**
-     * Get your current settings information account.  
+     * Change current information account.  
+     *   
+     * Example: `library_name.user.change_info(username, name, avatar_rel_path, bio)`  
+     * - Warning: avatar_rel_path image link must be generated/uploaded to Character.AI server.
+     * 
+     * @param {string | undefined} username
+     * @param {string | undefined} name
+     * @param {string | undefined} avatar_rel_path
+     * @param {string | undefined} bio
+     * 
+     * @returns {Promise<{status: string}>}
+    */
+    async change_info(username = "", name = "", avatar_rel_path = "", bio = "") {
+        return await (await https_fetch("https://plus.character.ai/chat/user/update/", "POST", {"Authorization": `Token ${this.#prop.token}`}, JSON.stringify({
+            "username": username && username !== this.#prop.user_data.user.user.username ? (() => {
+                this.#prop.user_data.user.user.username = username
+                return username
+            })() : this.#prop.user_data.user.user.username,
+            "name": name && name !== this.#prop.user_data.user.user.account.name ? (() => {
+                this.#prop.user_data.user.user.account.name = name
+                return name
+            })() : this.#prop.user_data.user.user.account.name,
+            "avatar_type": "UPLOADED",
+            "avatar_rel_path": avatar_rel_path && avatar_rel_path !== this.#prop.user_data.user.user.account.avatar_file_name ? (() => {
+                this.#prop.user_data.user.user.account.avatar_file_name = avatar_rel_path
+                return avatar_rel_path
+            })() : this.#prop.user_data.user.user.account.avatar_file_name,
+            "bio": bio && bio !== this.#prop.user_data.user.bio ? (() => {
+                this.#prop.user_data.user.bio = bio
+                return bio
+            })() : this.#prop.user_data.user.bio
+        }))).json()
+    }
+
+    /**
+     * Get current settings information account.  
      *   
      * Example: `await library_name.user.settings()`
      * 
-     * @returns {Promise<{
-     * default_persona_id? : string;
-     * voiceOverrides: Record<string, string>;
-     * personaOverrides: Record<string, string>;
-     * }>}
+     * @returns {Promise<UserSettings>}
     */
     async settings() {
         if (!this.#prop.token) throw "Please login first"
@@ -1851,19 +1901,20 @@ class CAINode extends events.EventEmitter {
      *   
      * Example: `library_name.logout()`
      * 
-     * @returns {boolean}
+     * @returns {Promise<boolean>}
     */
-    logout() {
+    async logout() {
         if (!this.#prop.ws[0] && !this.#prop.ws[1]) return false;
         
         if (this.#prop.join_type == 1) this.character.disconnect()
-        else if (this.#prop.join_type == 2) this.group_chat.disconnect()
+        else if (this.#prop.join_type == 2) await this.group_chat.disconnect()
 
-        this.#prop.ws[0].close()
-        this.#prop.ws[1].close()
+        await this.#prop.ws[0].close()
+        await this.#prop.ws[1].close()
         this.#prop.ws = []
         this.#prop.token = ""
         this.#prop.user_data = {}
+
         this.removeAllListeners("message")
         return true;
     }
