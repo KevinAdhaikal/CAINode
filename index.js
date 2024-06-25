@@ -132,7 +132,7 @@ class User_Class {
     }
 
     /**
-     * Get your account information data.  
+     * Get your current information account.  
      *   
      * Example: `library_name.user.info`
      * 
@@ -143,7 +143,7 @@ class User_Class {
     }
 
     /**
-     * Get your account settings information data.  
+     * Get your current settings information account.  
      *   
      * Example: `await library_name.user.settings()`
      * 
@@ -1736,8 +1736,8 @@ class CAINode extends events.EventEmitter {
     /**
      * User function list  
      *   
-     * - `info`: Get your account information data.  
-     * - `settings()`: Get your account settings information data.
+     * - `info`: Get your current information account.  
+     * - `settings()`: Get your current settings information account.
     */
     user = new User_Class(this.#prop) // User Class
     
@@ -1825,7 +1825,7 @@ class CAINode extends events.EventEmitter {
      * Start client initialization with login.  
      *   
      * Example: `await library_name.login("Character.AI Token")`
-     * 
+     *   
      * @see {@link https://github.com/KevinAdhaikal/CAINode?tab=readme-ov-file#login|here} for tutorial how to get Character.AI Token.
      * @param {string} token
      * @returns {Promise<boolean>}
@@ -1838,8 +1838,8 @@ class CAINode extends events.EventEmitter {
         
         if (!this.#prop.user_data.user.user.id) throw "Not a valid Character AI Token"
         this.#prop.ws = [
-            await open_ws("wss://neo.character.ai/connection/websocket", `edge_rollout=${this.#prop.edge_rollout}; HTTP_AUTHORIZATION="Token ${token}"`, this.#prop.user_data.user.user.id, this.eventEmitter),
-            await open_ws("wss://neo.character.ai/ws/", `edge_rollout=${this.#prop.edge_rollout}; HTTP_AUTHORIZATION="Token ${token}"`, 0, this.eventEmitter)
+            await open_ws("wss://neo.character.ai/connection/websocket", `edge_rollout=${this.#prop.edge_rollout}; HTTP_AUTHORIZATION="Token ${token}"`, this.#prop.user_data.user.user.id, this),
+            await open_ws("wss://neo.character.ai/ws/", `edge_rollout=${this.#prop.edge_rollout}; HTTP_AUTHORIZATION="Token ${token}"`, 0, this)
         ]
         this.#prop.token = token
 
@@ -1864,8 +1864,7 @@ class CAINode extends events.EventEmitter {
         this.#prop.ws = []
         this.#prop.token = ""
         this.#prop.user_data = {}
-        this.eventEmitter.removeAllListeners("message")
-
+        this.removeAllListeners("message")
         return true;
     }
 }
