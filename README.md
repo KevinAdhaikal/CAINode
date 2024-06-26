@@ -14,6 +14,12 @@ A lighweight Unofficial Character.AI API using NodeJS, It does not require a pup
      - [user.info](#userinfo)
      - [user.change_info](#userchange_info)
      - [user.settings](#usersettings)
+     - [user.public_following_list](#userpublic_following_list)
+     - [user.public_followers_list](#userpublic_followers_list)
+     - [user.following_list_name](#userfollowing_list_name)
+     - [user.followers_list_name](#userfollowers_list_name)
+     - [user.follow](#userfollow)
+     - [user.unfollow](#userunfollow)
    - [image](#imagegenerate_avatar)
      - [image.generate_avatar](#imagegenerate_avatar)
      - [image.generate_image](#imagegenerate_image)
@@ -168,6 +174,19 @@ client.user.info;
 [Back to Top](#cainode)
 
 
+## user.public_info()
+Get user public information account.
+
+```js
+await client.user.public_info();
+```
+| Param | Require | Type | Description |  
+| --- | --- | --- | --- |  
+| username | `false` | `string` | Target Character.AI username account. |
+
+[Back to Top](#cainode)
+
+
 ## user.change_info()
 Change current information account.
 
@@ -193,6 +212,86 @@ await client.user.settings();
 | Param | Require | Type | Description | 
 | --- | --- | --- | --- | 
 | none | `false` | `null` | Get user settings information. |
+
+[Back to Top](#cainode)
+
+
+## user.public_following_list()
+Get public user following list.
+
+```js
+await client.user.public_following_list();
+```
+| Param | Require | Type | Description | 
+| --- | --- | --- | --- | 
+| username | `true` | `string` | Target Character.AI username account. |
+| page_param | `false` | `number` | Page parameter. |
+
+[Back to Top](#cainode)
+
+
+## user.public_followers_list()
+Get public user followers list.
+
+```js
+await client.user.public_followers_list();
+```
+| Param | Require | Type | Description | 
+| --- | --- | --- | --- | 
+| username | `true` | `string` | Target Character.AI username account. |
+| page_param | `false` | `number` | Page parameter. |
+
+[Back to Top](#cainode)
+
+
+## user.following_list_name()
+Get account following name list.
+
+```js
+await client.user.following_list_name();
+```
+| Param | Require | Type | Description | 
+| --- | --- | --- | --- | 
+| none | `false` | `null` | Get account following name list. |
+
+[Back to Top](#cainode)
+
+
+## user.followers_list_name()
+Get account followers name list.
+
+```js
+await client.user.followers_list_name();
+```
+| Param | Require | Type | Description | 
+| --- | --- | --- | --- | 
+| none | `false` | `null` | Get account followers name list. |
+
+[Back to Top](#cainode)
+
+
+## user.follow()
+Follow user account.
+
+```js
+await client.user.follow();
+```
+| Param | Require | Type | Description | 
+| --- | --- | --- | --- | 
+| username | `true` | `string` | Target Character.AI username account. |
+
+[Back to Top](#cainode)
+
+
+## user.unfollow()
+Unfollow user account.
+
+```js
+await client.user.unfollow();
+```
+| Param | Require | Type | Description | 
+| --- | --- | --- | --- | 
+| username | `true` | `string` | Target Character.AI username account. |
 
 [Back to Top](#cainode)
 
