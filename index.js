@@ -299,7 +299,7 @@ class User_Class {
     */
     async following_list_name() {
         if (!this.#prop.token) throw "Please login first"
-        return await (await https_fetch("https://plus.character.ai/chat/user/following/", "GET", {"Authorization": `Token ${this.#prop.token}`, "Content-Type": "application/json"})).json()
+        return await (await https_fetch("https://plus.character.ai/chat/user/following/", "GET", {"Authorization": `Token ${this.#prop.token}`})).json()
     }
 
     /**
@@ -311,7 +311,7 @@ class User_Class {
     */
     async followers_list_name() {
         if (!this.#prop.token) throw "Please login first"
-        return await (await https_fetch("https://plus.character.ai/chat/user/followers/", "GET", {"Authorization": `Token ${this.#prop.token}`, "Content-Type": "application/json"})).json()
+        return await (await https_fetch("https://plus.character.ai/chat/user/followers/", "GET", {"Authorization": `Token ${this.#prop.token}`})).json()
     }
 
     /**
