@@ -109,6 +109,12 @@ class CAINode_prop {
     join_type = 0;
 }
 
+/**
+ * @typedef {object} StatusInfo
+ * @property {string} status
+ * @property {string} comment
+*/
+
 // User Class
 class User_Class {
     /**
@@ -145,6 +151,29 @@ class User_Class {
      * @property {Record<string, string> | undefined} personaOverrides
     */
 
+    /**
+     * @typedef {object} UserPublicInfo
+     * @property {object} public_user
+     * @property {string[]} public_user.characters
+     * @property {string} public_user.username
+     * @property {string} public_user.name
+     * @property {number} public_user.num_following
+     * @property {number} public_user.num_followers
+     * @property {string} public_user.avatar_file_name
+     * @property {string} public_user.subscription_type
+     * @property {string} public_user.bio
+     * @property {string | undefined} public_user.creator_info
+    */
+
+    /**
+     * @typedef {object} UserPublicFollowInfo
+     * @property {object} users
+     * @property {string} users[].username
+     * @property {string} users[].account__avatar_file_name
+     * @property {string} users[].account__bio
+     * @property {boolean} has_next_page
+    */
+
     #prop;
     constructor(prop) {
         this.#prop = prop
@@ -162,9 +191,24 @@ class User_Class {
     }
 
     /**
+     * Get user public information account.  
+     *   
+     * Example  
+     * - Get someone public info: `await library_name.user.public_info("username")`  
+     * - Get your own info: `await library_name.user.public_info()`
+     * 
+     * @param {string | undefined} username
+     * @returns {Promise<UserPublicInfo>}
+    */
+    async public_info(username) {
+        if (!this.#prop.token) throw "Please login first"
+        return await (await https_fetch("https://plus.character.ai/chat/user/public/", "POST", {"Authorization": `Token ${this.#prop.token}`, "Content-Type": "application/json"}, JSON.stringify({"username": username ? username : this.#prop.user_data.user.user.username}))).json()
+    }
+
+    /**
      * Change current information account.  
      *   
-     * Example: `library_name.user.change_info(username, name, avatar_rel_path, bio)`  
+     * Example: `library_name.user.change_info("username", "name", "avatar_rel_path", "bio")`  
      * - Warning: avatar_rel_path image link must be generated/uploaded to Character.AI server.
      * 
      * @param {string | undefined} username
@@ -172,7 +216,7 @@ class User_Class {
      * @param {string | undefined} avatar_rel_path
      * @param {string | undefined} bio
      * 
-     * @returns {Promise<{status: string}>}
+     * @returns {Promise<StatusInfo>}
     */
     async change_info(username = "", name = "", avatar_rel_path = "", bio = "") {
         return await (await https_fetch("https://plus.character.ai/chat/user/update/", "POST", {"Authorization": `Token ${this.#prop.token}`}, JSON.stringify({
@@ -206,6 +250,98 @@ class User_Class {
     async settings() {
         if (!this.#prop.token) throw "Please login first"
         return await (await https_fetch("https://plus.character.ai/chat/user/settings/", "GET", {"Authorization": `Token ${this.#prop.token}`})).json()
+    }
+
+    /**
+     * Get public user following list.  
+     *   
+     * Example  
+     * - Get someone public user following list: `await library_name.user.public_following_list("Username", page_param)`  
+     * - Get your own user following list: `await library_name.user.public_following_list(undefined, page_param)`
+     * 
+     * @param {string} username
+     * @param {number | undefined} page_param
+     * 
+     * @returns {Promise<UserPublicFollowInfo>}
+    */
+    async public_following_list(username, page_param = 1) {
+        if (!this.#prop.token) throw "Please login first"
+        return await (await https_fetch("https://plus.character.ai/chat/user/public/following/", "POST", {"Authorization": `Token ${this.#prop.token}`, "Content-Type": "application/json"}, JSON.stringify({
+            "username":username ? username : this.#prop.user_data.user.user.username, "pageParam": page_param
+        }))).json()
+    }
+    
+    /**
+     * Get public user followers list.  
+     *   
+     * Example  
+     * - Get someone public user followers list: `await library_name.user.public_followers_list("Username", page_param)`  
+     * - Get your own user followers list: `await library_name.user.public_followers_list(undefined, page_param)`
+     * 
+     * @param {string} username
+     * @param {number | undefined} page_param
+     * 
+     * @returns {Promise<UserPublicFollowInfo>}
+    */
+    async public_followers_list(username, page_param = 1) {
+        if (!this.#prop.token) throw "Please login first"
+        return await (await https_fetch("https://plus.character.ai/chat/user/public/followers/", "POST", {"Authorization": `Token ${this.#prop.token}`, "Content-Type": "application/json"}, JSON.stringify({
+            "username":username ? username : this.#prop.user_data.user.user.username, "pageParam": page_param
+        }))).json()
+    }
+
+    /**
+     * Get account following name list.  
+     *   
+     * Example: `await library_name.user.following_list_name()`
+     * 
+     * @returns {Promise<{following: string[]}>}
+    */
+    async following_list_name() {
+        if (!this.#prop.token) throw "Please login first"
+        return await (await https_fetch("https://plus.character.ai/chat/user/following/", "GET", {"Authorization": `Token ${this.#prop.token}`, "Content-Type": "application/json"})).json()
+    }
+
+    /**
+     * Get account followers name list.  
+     *   
+     * Example: `await library_name.user.followers_list_name()`
+     * 
+     * @returns {Promise<{following: string[]}>}
+    */
+    async followers_list_name() {
+        if (!this.#prop.token) throw "Please login first"
+        return await (await https_fetch("https://plus.character.ai/chat/user/followers/", "GET", {"Authorization": `Token ${this.#prop.token}`, "Content-Type": "application/json"})).json()
+    }
+
+    /**
+     * Follow user account.  
+     *   
+     * Example: `await library_name.user.follow("Username")`
+     * 
+     * @param {string} username
+     * @returns {Promise<StatusInfo>}
+    */
+    async follow(username) {
+        if (!this.#prop.token) throw "Please login first"
+        return await (await https_fetch("https://plus.character.ai/chat/user/follow/", POST, {"Authorization": `Token ${this.#prop.token}`, "Content-Type": "application/json"}, JSON.stringify({
+            "username": username
+        }))).json()
+    }
+    
+    /**
+     * Unfollow user account.  
+     *   
+     * Example: `await library_name.user.unfollow("Username")`
+     * 
+     * @param {string} username
+     * @returns {Promise<StatusInfo>}
+    */
+    async unfollow(username) {
+        if (!this.#prop.token) throw "Please login first"
+        return await (await https_fetch("https://plus.character.ai/chat/user/unfollow/", POST, {"Authorization": `Token ${this.#prop.token}`, "Content-Type": "application/json"}, JSON.stringify({
+            "username": username
+        }))).json()
     }
 }
 
@@ -779,12 +915,12 @@ class Character_Class {
     /**
      * Search character by name and suggested by Character.AI Server.  
      *   
-     * Example: `await library_name.character.serach_suggest("Query")`
+     * Example: `await library_name.character.search_suggest("Query")`
      * 
      * @param {string} name
      * @returns {Promise<CharactersSearchSuggestInfo>}
     */
-    async serach_suggest(name) {
+    async search_suggest(name) {
         if (!this.#prop.token) throw "Please login first"
         return await (await https_fetch(`https://beta.character.ai/chat/characters/suggest/?query=${name}`, "GET", {
             'Authorization': `Token ${this.#prop.token}`
