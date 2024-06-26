@@ -784,7 +784,7 @@ class Character_Class {
      * @param {string} name
      * @returns {Promise<CharactersSearchSuggestInfo>}
     */
-    async serach_suggest(name) {
+    async search_suggest(name) {
         if (!this.#prop.token) throw "Please login first"
         return await (await https_fetch(`https://beta.character.ai/chat/characters/suggest/?query=${name}`, "GET", {
             'Authorization': `Token ${this.#prop.token}`
