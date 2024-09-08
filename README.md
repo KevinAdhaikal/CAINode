@@ -108,7 +108,7 @@ await client.login("Your token");
 console.log("Logged in!");
 await client.logout();
 ```
-[Example Character.AI Group Chat Implementation using Discord](https://github.com/kevinadhaikal/caicord)
+[Example Character.AI Group Chat Implementation using Discord](https://github.com/kevinadhaikal/caicord)<br>
 [Back to Top](#cainode)
 
 # Client
