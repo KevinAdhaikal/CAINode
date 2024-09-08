@@ -3,9 +3,10 @@ A lighweight Unofficial Character.AI API using NodeJS, It does not require a pup
 
 ![GitHub commit activity (branch)](https://img.shields.io/github/commit-activity/t/kevinadhaikal/cainode?logo=github&cacheSeconds=12000&style=for-the-badge) ![GitHub last commit (by committer)](https://img.shields.io/github/last-commit/kevinadhaikal/cainode?style=for-the-badge) ![GitHub repo size](https://img.shields.io/github/repo-size/kevinadhaikal/cainode?logo=github&style=for-the-badge&link=https%3A%2F%2Fgithub.com%2Fkevinadhaikal%2Fcainode) ![GitHub package.json version (branch)](https://img.shields.io/github/package-json/v/kevinadhaikal/cainode/main?style=for-the-badge&logo=github)
 
-
 ## Table of contents
-- [Installation](#installation)  
+- [Getting Started](#getting_started)
+   - [Install](#install)
+   - [Example Code](#example_code)
 - [Example usage](#example_usage)
 - [Client](#client)  
    - [login](#login)  
@@ -72,42 +73,43 @@ A lighweight Unofficial Character.AI API using NodeJS, It does not require a pup
      - [chat.history_chat_turns](#chathistory_chat_turns)
 - [Issues](#issues)
 
-## Installation  
-Start installing package using npm by sending this command in your terminal.
-
-```bash
-npm install cainode
+# Getting Started
+## Install
+To install CAINode, you can simply do
+- using NPM (Node Package Manager)
 ```
+npm install -g cainode
+```
+- Using Deno
+```ts
+import CAINode from "npm:cainode@latest";
+```
+- Using Bun.JS
+```
+bun install cainode
+```
+## Example code
+- CommonJS
+```js
+(async function() {
+    const client = new (await import("cainode")).CAINode();
+    await client.login("Your token");
+    console.log("Logged in!");
+    await client.logout();
+})()
+```
+- TypeScript/ESM
+```ts
+import {CAINode} from "cainode"
+// import {CAINode} from "npm:cainode@latest"; for Deno
 
-## Example usage  
-```js  
-// import CAINode from "cainode";  
-const CAINode = require("cainode");  
 const client = new CAINode();
 
-async function start() {  
-  const token = "YOUR_CAI_TOKEN";  
-  const login = await client.login(token);  
-  if(!login) throw "failed client login!";  
-  console.log("Client login:", login);  
-  const logout = await client.logout();  
-  if(!logout) throw "failed client logout!";  
-  console.log("Client logout:", logout);  
-}
-
-start();  
-```  
-[Example Character.AI Group Chat Implementation using Discord](https://github.com/kevinadhaikal/caicord)
-
-## Client  
-Import client from module  
-```js  
-// import CAINode from "cainode";  
-const CAINode = require("cainode");
-
-const client = new CAINode();  
+await client.login("Your token");
+console.log("Logged in!");
+await client.logout();
 ```
-
+[Example Character.AI Group Chat Implementation using Discord](https://github.com/kevinadhaikal/caicord)
 [Back to Top](#cainode)
 
 
