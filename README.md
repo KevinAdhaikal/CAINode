@@ -111,7 +111,7 @@ await client.logout();
 [Example Character.AI Group Chat Implementation using Discord](https://github.com/kevinadhaikal/caicord)
 [Back to Top](#cainode)
 
-
+# Client
 ## login()
 Start client initialization with login, make sure your token is valid so that the login session can run properly.
 
