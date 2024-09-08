@@ -4,10 +4,9 @@ A lighweight Unofficial Character.AI API using NodeJS, It does not require a pup
 ![GitHub commit activity (branch)](https://img.shields.io/github/commit-activity/t/kevinadhaikal/cainode?logo=github&cacheSeconds=12000&style=for-the-badge) ![GitHub last commit (by committer)](https://img.shields.io/github/last-commit/kevinadhaikal/cainode?style=for-the-badge) ![GitHub repo size](https://img.shields.io/github/repo-size/kevinadhaikal/cainode?logo=github&style=for-the-badge&link=https%3A%2F%2Fgithub.com%2Fkevinadhaikal%2Fcainode) ![GitHub package.json version (branch)](https://img.shields.io/github/package-json/v/kevinadhaikal/cainode/main?style=for-the-badge&logo=github)
 
 ## Table of contents
-- [Getting Started](#getting_started)
+- [Getting Started](#getting-started)
    - [Install](#install)
-   - [Example Code](#example_code)
-- [Example usage](#example_usage)
+   - [Example Usage](#example-usage)
 - [Client](#client)  
    - [login](#login)  
    - [logout](#logout)  
@@ -88,7 +87,7 @@ import CAINode from "npm:cainode@latest";
 ```
 bun install cainode
 ```
-## Example code
+## Example usage
 - CommonJS
 ```js
 (async function() {
