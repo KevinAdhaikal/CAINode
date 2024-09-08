@@ -76,39 +76,39 @@ A lighweight Unofficial Character.AI API using NodeJS, It does not require a pup
 ## Install
 To install CAINode, you can simply do
 - using NPM (Node Package Manager)
-```
-npm install -g cainode
-```
+   ```
+   npm install -g cainode
+   ```
 - Using Deno
-```ts
-import CAINode from "npm:cainode@latest";
-```
+   ```ts
+   import CAINode from "npm:cainode@latest";
+   ```
 - Using Bun.JS
-```
-bun install cainode
-```
+   ```
+   bun install cainode
+   ```
 ## Example usage
 - CommonJS
-```js
-(async function() {
-    const client = new (await import("cainode")).CAINode();
-    await client.login("Your token");
-    console.log("Logged in!");
-    await client.logout();
-})()
-```
+   ```js
+   (async function() {
+       const client = new (await import("cainode")).CAINode();
+       await client.login("Your token");
+       console.log("Logged in!");
+       await client.logout();
+   })()
+   ```
 - TypeScript/ESM
-```ts
-import {CAINode} from "cainode"
-// import {CAINode} from "npm:cainode@latest"; for Deno
+   ```ts
+   import {CAINode} from "cainode"
+   // import {CAINode} from "npm:cainode@latest"; for Deno
+   
+   const client = new CAINode();
+   
+   await client.login("Your token");
+   console.log("Logged in!");
+   await client.logout();
+   ```
 
-const client = new CAINode();
-
-await client.login("Your token");
-console.log("Logged in!");
-await client.logout();
-```
-[Example Character.AI Group Chat Implementation using Discord](https://github.com/kevinadhaikal/caicord)<br>
 [Back to Top](#cainode)
 
 # Client
