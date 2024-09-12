@@ -1,6 +1,6 @@
 # CAINode  
-A lighweight Unofficial Character.AI API using NodeJS, It does not require a puppeteer to interact with c.ai because the interaction is conducted with websocket and HTTPS Request (fetch).
-
+A lighweight Unofficial Character.AI API using NodeJS, It does not require a puppeteer to interact with c.ai because the interaction is conducted with websocket and HTTPS Request (fetch).<br><br>
+CAINode is now using ESM. Please read at [Getting Started](#getting-started) first before using CAINode.<br><br>
 ![GitHub commit activity (branch)](https://img.shields.io/github/commit-activity/t/kevinadhaikal/cainode?logo=github&cacheSeconds=12000&style=for-the-badge) ![GitHub last commit (by committer)](https://img.shields.io/github/last-commit/kevinadhaikal/cainode?style=for-the-badge) ![GitHub repo size](https://img.shields.io/github/repo-size/kevinadhaikal/cainode?logo=github&style=for-the-badge&link=https%3A%2F%2Fgithub.com%2Fkevinadhaikal%2Fcainode) ![GitHub package.json version (branch)](https://img.shields.io/github/package-json/v/kevinadhaikal/cainode/main?style=for-the-badge&logo=github)
 
 # Table of contents
