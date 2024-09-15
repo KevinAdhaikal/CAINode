@@ -47,7 +47,6 @@ function open_ws(url, cookie, userid, this_class) {
         })
         ws_con.on('message', function(message) {
             message = message.toString()
-            console.log(message)
             if (message === "{}") ws_con.send("{}")
             else this_class.emit("message", message)
         });
