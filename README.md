@@ -20,6 +20,7 @@ CAINode is now using ESM. Please read at [Getting Started](#getting-started) fir
    - [Example Usage](#example-usage)  
 - [Main Function List](#main-function-list)  
    - [login](#login)  
+   - [generate_token](#generate_token)
    - [logout](#logout)  
 - [User Function List](#userinfo)
    - [user.info](#userinfo)
@@ -125,7 +126,8 @@ To install CAINode, you can simply do
 ## login()
 Start client initialization with login, make sure your token is valid so that the login session can run properly.
 
-This is the tutorial of how to get C.AI sessionToken
+- get C.AI Session Token
+This is the tutorial of how to get C.AI Session Token
 ### On PC:
 1. Open the Character.AI website in your browser (https://beta.character.ai)
 2. Open the developer tools (<kbd>F12</kbd>, <kbd>Ctrl+Shift+I</kbd>, or <kbd>Cmd+J</kbd>)
@@ -147,14 +149,24 @@ This is the tutorial of how to get C.AI sessionToken
 ![Access_Token_Mobile](https://github.com/realcoloride/node_characterai/assets/108619637/516722db-a90f-4dd0-987e-fda01e68ac09)
 4. Click the respective buttons to copy your access token or id token to your clipboard.
 
-
-
 ```js  
 await client.login("YOUR_CHARACTER_AI_TOKEN");  
 ```  
 | Param | Require | Type | Description |  
 | --- | --- | --- | --- |  
-| Token | `true` | `String` | Your character ai token used for client login. |
+| Token | `true` | `string` | Your character ai token used for client login. |
+
+[Back to Top](#cainode)
+
+## generate_token()
+Generate your Character.AI Token by email.
+
+```js
+await client.generate_token("your@email.com");
+```
+| Param | Require | Type | Description |  
+| --- | --- | --- | --- |  
+| email | `true` | `string` | Your email to send a verification link. |
 
 [Back to Top](#cainode)
 
