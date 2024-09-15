@@ -47,6 +47,7 @@ function open_ws(url, cookie, userid, this_class) {
         })
         ws_con.on('message', function(message) {
             message = message.toString()
+            console.log(message)
             if (message === "{}") ws_con.send("{}")
             else this_class.emit("message", message)
         });
@@ -242,10 +243,10 @@ class User_Class {
      * Example: `library_name.user.change_info("username", "name", "avatar_rel_path", "bio")`  
      * - Warning: avatar_rel_path image link must be generated/uploaded to Character.AI server.
      * 
-     * @param {string | undefined} username
-     * @param {string | undefined} name
-     * @param {string | undefined} avatar_rel_path
-     * @param {string | undefined} bio
+     * @param {string | null} username
+     * @param {string | null} name
+     * @param {string | null} avatar_rel_path
+     * @param {string | null} bio
      * 
      * @returns {Promise<StatusInfo>}
     */
@@ -288,10 +289,10 @@ class User_Class {
      *   
      * Example  
      * - Get someone public user following list: `await library_name.user.public_following_list("Username", page_param)`  
-     * - Get your own user following list: `await library_name.user.public_following_list(undefined, page_param)`
+     * - Get your own user following list: `await library_name.user.public_following_list("", page_param)`
      * 
-     * @param {string} username
-     * @param {number | undefined} page_param
+     * @param {string | null} username
+     * @param {number | null} page_param
      * 
      * @returns {Promise<UserPublicFollowInfo>}
     */
@@ -307,10 +308,10 @@ class User_Class {
      *   
      * Example  
      * - Get someone public user followers list: `await library_name.user.public_followers_list("Username", page_param)`  
-     * - Get your own user followers list: `await library_name.user.public_followers_list(undefined, page_param)`
+     * - Get your own user followers list: `await library_name.user.public_followers_list("", page_param)`
      * 
-     * @param {string} username
-     * @param {number | undefined} page_param
+     * @param {string | null} username
+     * @param {number | null} page_param
      * 
      * @returns {Promise<UserPublicFollowInfo>}
     */
@@ -926,10 +927,10 @@ class Character_Class {
      * Example  
      * - Like: `await library_name.character.vote("Character ID", true)`  
      * - Dislike: `await library_name.character.vote("Character ID", false)`  
-     * - Cancel: `await library_name.character.vote("Character ID", null)` or `library_name.character.vote("Character ID")`
+     * - Cancel (neither both): `await library_name.character.vote("Character ID", null)` or `library_name.character.vote("Character ID")`
      * 
      * @param {string} character_id
-     * @param {boolean | null | undefined} vote
+     * @param {boolean | null} vote
      * @returns {Promise<void>}
     */
     async vote(character_id, vote = null) {
@@ -1062,9 +1063,9 @@ class Character_Class {
      * - Without manual turn: `await library_name.character.send_message("Your Message", false, "URL Link")`  
      * - With manual turn: `await library_name.character.send_message("Your Message", true, "URL Link")`
      * 
-     * @param {string | undefined} message
+     * @param {string | null} message
      * @param {boolean} manual_turn
-     * @param {string | undefined} image_url_path
+     * @param {string | null} image_url_path
      * @returns {Promise<SingleCharacterChatInfo>}
     */
     async send_message(message, manual_turn = false, image_url_path = "") {
@@ -1193,17 +1194,16 @@ class Character_Class {
     }
 
     /**
-     * archive your current conversation between you and the character.  
      * it will create a new conversation and your current conversation will save on the history.  
      *   
      * Example  
-     * - With greeting: `await library_name.character.archive_conversation()`  
-     * - Without greeting: `await library_name.character.archive_conversation(false)`
+     * - With greeting: `await library_name.character.create_new_conversation()`  
+     * - Without greeting: `await library_name.character.create_new_conversation(false)`
      * 
      * @param {boolean} with_greeting
      * @returns {Promise<SingleCharacterChatInfo>}
     */
-    async archive_conversation(with_greeting = true) {
+    async create_new_conversation(with_greeting = true) {
         if (!this.#prop.token) throw "Please login first."
         if (!this.#prop.join_type || this.#prop.join_type != 1) throw "This function only works when you're connected on Single Character Chat."
         
@@ -1333,7 +1333,7 @@ class Character_Class {
      * - Auto (you must already connected with character): `library_name.character.current_voice()`  
      * - Manual: `library_name.character.current_voice("Character ID")`
      * 
-     * @param {string | undefined} character_id  
+     * @param {string | null} character_id  
      * @returns {Promise<{character_external_id: string, voice_id: string}>}
     */
     async current_voice(character_id = "") {
@@ -1716,7 +1716,7 @@ class GroupChat_Class {
      * - With Image: `await library_name.group_chat.send_message("Your Message", "URL Image")`
      * 
      * @param {string} message
-     * @param {string | undefined} image_url_path
+     * @param {string | null} image_url_path
      * @returns {Promise<GroupChatInfo>}
     */
     async send_message(message, image_url_path = "") {
@@ -2089,8 +2089,8 @@ class Chat_Class {
      * - Already connected to the Group/Single chat: `await library_name.chat.history_chat_turns("", "fill your next_token here")`  
      * - Manual: `await library_name.chat.history_chat_turns("Chat ID", "fill your next_token here")`
      * 
-     * @param {string | undefined} chat_id
-     * @param {string | undefined} next_token
+     * @param {string | null} chat_id
+     * @param {string | null} next_token
      * @returns {Promise<HistoryChatTurnsInfo>}
     */
     async history_chat_turns(chat_id = "", next_token = "") {
@@ -2118,16 +2118,16 @@ class Chat_Class {
     }
 
     /**
-     * Get list of your history archive conversation, and this function is for Single character only.  
+     * Get list of your history conversation from character, and this function is for Single character only.  
      *   
      * Example
-     * - Auto (Already connected to the Single character chat): `await library_name.chat.history_conversation()`  
-     * - Manual: `await library_name.chat.history_conversation("Character ID")`
+     * - Auto (Already connected to the Single character chat): `await library_name.chat.history_conversation_list()`  
+     * - Manual: `await library_name.chat.history_conversation_list("Character ID")`
      * 
      * @param {string} character_id
      * @returns {Promise<HistoryArchiveConversationInfo>}
     */
-    async history_archive_conversation(character_id) {
+    async history_conversation_list(character_id) {
         if (!this.#prop.token) throw "Please login first."
         if (!this.#prop.current_char_id_chat && !character_id) throw "Please input the Character ID, or you must connected to the single character chat."
         
@@ -2137,10 +2137,12 @@ class Chat_Class {
     }
 
     /**
-     * Set conversation chat, and bring the archive chat into current chat.  
+     * Set conversation chat, and bring the history chat into current chat.  
+     *   
+     * Example: `await library_name.chat.set_conversation_chat("Chat ID")`
      * 
      * @param {string} chat_id 
-     * @returns {Promise<undefined>}
+     * @returns {Promise<void>}
      */
     async set_conversation_chat(chat_id) {
         if (!this.#prop.token) throw "Please login first."
@@ -2189,7 +2191,7 @@ class Chat_Class {
     /**
      * Get list pinned message from chat, and this function works only for single character chat.  
      *   
-     * Example: `await library_name.chat.list_pinned_message("chat id")`
+     * Example: `await library_name.chat.list_pinned_message("Chat ID")`
      * 
      * @param {string} chat_id 
      * @returns {Promise<ListPinnedMessageInfo>}
@@ -2201,6 +2203,151 @@ class Chat_Class {
         return await (await https_fetch(`https://neo.character.ai/turns/${chat_id ? chat_id : this.#prop.current_chat_id}/?pinned_only=true`, "GET", {
             'Authorization': `Token ${this.#prop.token}`
         })).json()
+    }
+
+    /**
+     * Archive your conversation, and this function works only for single character chat.  
+     *   
+     * Example  
+     * - If you want archive the conversation: `await library_name.chat.archive_conversation("Chat ID", true)`  
+     * - If you want unarchive the conversation: `await library_name.chat.archive_conversation("Chat ID", false)`
+     * 
+     * @param {string} chat_id
+     * @param {boolean} set_archive
+     * @returns {Promise<object>}
+    */
+    async archive_conversation(chat_id, set_archive = true) {
+        if (!this.#prop.token) throw "Please login first."
+
+        return await (await https_fetch(`https://neo.character.ai/chat/${chat_id}/${set_archive ? "archive" : "unarchive"}`, "PATCH", {
+            'Authorization': `Token ${this.#prop.token}`
+        })).json()
+    }
+
+    /**
+     * Archive your conversation, and this function works only for single character chat.  
+     *   
+     * Example: `await library_name.chat.duplicate_conversation("Chat ID", "Turn ID")`
+     * 
+     * @param {string} chat_id
+     * @param {string} turn_id
+     * @returns {Promise<{"new_chat_id": string}>}
+     */
+    async duplicate_conversation(chat_id, turn_id) {
+        if (!this.#prop.token) throw "Please login first."
+
+        return await (await https_fetch(`https://neo.character.ai/chat/${chat_id}/copy`, "POST", {
+            'Authorization': `Token ${this.#prop.token}`,
+            "Content-Type": "application/json"
+        }, JSON.stringify({
+            "end_turn_id": turn_id
+        }))).json()
+    }
+
+    /**
+     * Rename your conversation, and this function works only for single character chat.  
+     *   
+     * Example: `await library_name.chat.rename_conversation("Chat ID", "Custom Name")`
+     * 
+     * @param {string} chat_id
+     * @param {string} name
+     * @returns {Promise<void>}
+     */
+    async rename_conversation(chat_id, name) {
+        if (!this.#prop.token) throw "Please login first."
+
+        return await (await https_fetch(`https://neo.character.ai/chat/${chat_id}/update_name`, "PATCH", {
+            'Authorization': `Token ${this.#prop.token}`,
+            "Content-Type": "application/json"
+        }, JSON.stringify({
+            "name": name
+        }))).json()
+    }
+}
+
+class Livekit_Class {
+    #livekit_audioStream;
+    #livekit_audioSource;
+    #opts;
+    
+    /**
+     * @param {import("@livekit/rtc-node").AudioStream} audioStream
+     * @param {import("@livekit/rtc-node").AudioSource} audioSource
+     * @param {{framerate: number, channel: number}} opts
+    */
+    constructor(audioStream, audioSource, opts) {
+        if (!livekit) throw "This function only works when you're install livekit library. (npm/bun install @livekit/rtc-node)"
+        this.#livekit_audioStream = audioStream;
+        this.#livekit_audioSource = audioSource;
+        this.#opts = opts;
+    }
+
+    /**
+     * this function checking is the PCM buffer frame is silence or not.  
+     *   
+     * if the PCM Buffer is silence, it will return false. if not, it will return true  
+     *   
+     * Threshold default: 1000  
+     * 
+     * Credit: https://github.com/ashishbajaj99/mic/blob/master/lib/silenceTransform.js
+     * 
+     * @param {Buffer} chunk 
+     * @param {number} threshold 
+     * @returns {boolean}
+    */
+    is_speech(chunk, threshold = 1000) {
+        let consecutiveSilence = 0, speechSample;
+        
+        for (let i = 0; i < chunk.length; i += 2) {
+            if (chunk[i + 1] > 128) speechSample = (chunk[i + 1] - 256) * 256;
+            else speechSample = chunk[i + 1] * 256;
+            speechSample += chunk[i];
+
+            if (Math.abs(speechSample) > threshold) return true;
+            else consecutiveSilence++;
+        }
+
+        if (consecutiveSilence >= chunk.length / 2) return false;
+        return true;
+    }
+
+
+    /**
+     * Receive audio stream from Livekit Server.  
+     *   
+     * Example  
+     * ```js
+     * let test = await library_name.voice.connect("Sonic The Hedgehog", true);
+     * test.output.on("frameReceived", e => {
+     *      console.log(e.frame.data.buffer); // return PCM data
+     * })
+     * ```
+    */
+    get output() {
+        return this.#livekit_audioStream;
+    }
+
+    /**
+     * Send audio PCM raw data to the Livekit Server.  
+     *   
+     * Example  
+     * ```js
+     * let test = await library_name.voice.connect("Sonic The Hedgehog", true);
+     * test.input_write(pcm_data);
+     * ```
+     * @param {Buffer} pcm_data
+     * @returns {Promise<void>}
+     */
+    async input_write(pcm_data) {
+        pcm_data = new Int16Array(pcm_data.buffer, pcm_data.byteOffset, pcm_data.length / 2)
+        await this.#livekit_audioSource.captureFrame(
+            new livekit.AudioFrame(
+                pcm_data,
+                this.#opts.framerate,
+                this.#opts.channel,
+                pcm_data.length
+            )
+        )
     }
 }
 
@@ -2237,7 +2384,7 @@ class Voice_Class {
      * - Get your own created voice list: `await library_name.voice.user_list()`
      * - Get user created voice list: `await library_name.voice.user_list("username")`
      * 
-     * @param {string | undefined} username
+     * @param {string | null} username
      * @returns {Promise<{ voices: VoiceInfo[] }>}
     */
     user_created_list(username = "") {
@@ -2283,31 +2430,81 @@ class Voice_Class {
     /**
      * Warning: This feature only supports Single character chat, not Group chat.  
      *   
-     * Connect to voice character chat.  
+     * Connect to voice character chat, and this function works only for single character chat.  
      *   
      * Example function  
      * - Using Query: `await library_name.voice.connect("Query", true)`  
      * - Using Voice ID: `await library_name.voice.connec("Voice ID")`
      * 
-     * - Example to use  
-     * ```js
-     * let test = await library_name.voice.connect("Sonic The Hedgehog", true)
-     * test.on("frameReceived", data => {
-     *      console.log(data)
-     * })
-     * ```
+     * Example to use  
+     * - Without microphone
+     *      ```js
+     *      const Speaker = require("speaker"); // import Speaker from "speaker"
+     *      const speaker = new Speaker({
+     *            channels: 1,          // 1 channel
+     *            bitDepth: 16,         // 16-bit samples
+     *            sampleRate: 48000     // 48,000 Hz sample rate
+     *      });
+     *      
+     *      library_name.character.connect("Character ID");
+     *      let test = await library_name.voice.connect("Sonic The Hedgehog", true);
+     * 
+     *      console.log("Character voice ready!");
+     * 
+     *      test.output.on("frameReceived", ev => {
+     *           speaker.write(Buffer.from(ev.frame.data.buffer)); // PCM buffer write into speaker and you'll hear the sound.
+     *      });
+     * 
+     *      library_name.character.generate_turn(); // Test is voice character is working or not.
+     *      ```
+     *   
+     * - With microphone (Voice call)
+     *      ```js
+     *      const Speaker = require("speaker"); // import Speaker from "speaker"
+     *      const { spawn } = require('child_process'); // import { spawn } from "child_process".
+     *      //for microphone, I'll using sox. so Ineed child_process
+     *      
+     *      const speaker = new Speaker({
+     *            channels: 1,          // 1 channel
+     *            bitDepth: 16,         // 16-bit samples
+     *            sampleRate: 48000     // 48,000 Hz sample rate
+     *      });
+     *      
+     *      const recordMic = spawn('sox', [
+     *           '-q',
+     *           '-t', 'waveaudio', '-d', // Input windows audio (add '-d' if you want set default)
+     *           '-r', '48000',           // Sample rate: 48 kHz
+     *           '-e', 'signed-integer',  // Encoding: signed PCM
+     *           '-b', '16',              // Bit depth: 16-bit
+     *           '-c', '1',               // Channel: 1 (mono)
+     *           '-t', 'raw',             // Output format: raw PCM
+     *           '-'                      // stdout
+     *      ]);
+     *      
+     *      let test = await library_name.voice.connect("Sonic The Hedgehog", true, true);
+     * 
+     *      console.log("Voice call ready!");
+     *  
+     *      test.output.on("frameReceived", ev => {
+     *           speaker.write(Buffer.from(ev.frame.data.buffer)); // PCM buffer write into speaker and you'll hear the sound.
+     *      });
+     *      
+     *      recordMic.stdout.on("data", data => {
+     *           if (test.is_speech(data)) test.input_write(data); // Mic PCM Buffer output send it to Livekit server.
+     *      });
+     *      ```
      * 
      * @param {string} voice_query_or_id
      * @param {boolean} using_voice_query
      * @param {boolean} using_mic
-     * @returns {Promise<import("@livekit/rtc-node").AudioStream>}
+     * @param {{framerate: number, channel: number}} mic_opt
+     * @returns {Promise<Livekit_Class>}
     */
-    connect(voice_query_or_id, using_voice_query = false, using_mic = false) {
+    connect(voice_query_or_id, using_voice_query = false, using_mic = false, mic_opt = {"framerate": 48000, "channel": 1}) {
         if (!this.#prop.token) throw "Please login first."
         if (!this.#prop.join_type || this.#prop.join_type != 1) throw "This function only works when you're connected on Single Character Chat."
         if (!livekit) throw "This function only works when you're install livekit library. (npm/bun install @livekit/rtc-node)"
         if (this.#prop.is_connected_livekit_room) throw "You're already connected to Livekit room!"
-
         return new Promise(async resolve => {
             const connect_result = await (await https_fetch("https://neo.character.ai/multimodal/api/v1/sessions/joinOrCreateSession", "POST", {
                 "Authorization": `Token ${this.#prop.token}`,
@@ -2335,10 +2532,23 @@ class Voice_Class {
                 dynacast: true
             })
             
-            this.#prop.livekit_room.on("trackSubscribed", track => {
+            this.#prop.livekit_room.once("trackSubscribed", (track) => {
                 if (track.kind == 1) {
                     this.#prop.is_connected_livekit_room = 1;
-                    resolve(new livekit.AudioStream(track));
+                    if (using_mic) {
+                        mic_opt = {
+                            framerate: mic_opt.framerate ? mic_opt.framerate : 48000,
+                            channel: mic_opt.channel ? mic_opt.channel : 1
+                        }
+                        const audio_s = new livekit.AudioSource(mic_opt.framerate, mic_opt.channel);
+                        this.#prop.livekit_room.localParticipant.publishTrack(
+                            livekit.LocalAudioTrack.createAudioTrack('audio', audio_s),
+                            new livekit.TrackPublishOptions({
+                                source: livekit.TrackSource.SOURCE_MICROPHONE
+                            })
+                        );
+                        resolve(new Livekit_Class(new livekit.AudioStream(track), audio_s, mic_opt))
+                    } else resolve(new Livekit_Class(new livekit.AudioStream(track)))
                 }
             });
         })
@@ -2350,7 +2560,7 @@ class Voice_Class {
      * Disconnect from voice character chat.  
      *   
      * Example: `await library_name.voice.disconnect()`
-     * @returns {Promise<undefined>}
+     * @returns {Promise<void>}
     */
     async disconnect() {
         if (!this.#prop.token) throw "Please login first."
@@ -2462,12 +2672,15 @@ class CAINode extends EventEmitter {
     /**
      * Chat function list  
      *   
-     * - `history_chat_turns()`: Get a history chat from group or single chat.  
+     * - `history_chat_turns()`: Get a history chat from Group or Single chat.  
      * - `conversation_info()`: Get conversation info.  
-     * - `history_archive_conversation()`: Get list of your history archive conversation, and this function is for Single character only.  
-     * - `set_conversation_chat()`: Set conversation chat, and bring the archive chat into current chat.  
-     * - `pin_message()`: Pin message.  
-     * - `list_pinned_message()`: Get list pinned message from chat, and this function works only for single character chat.
+     * - `history_conversation_list()`: Get list of your history conversation, and this function is for Single character only.  
+     * - `set_conversation_chat()`: Set conversation chat, and bring the history chat into current chat.  
+     * - `pin_message()`: Pin message, and this function works only for Single character chat.  
+     * - `list_pinned_message()`: Get list pinned message from chat, and this function works only for Single character chat.  
+     * - `archive_conversation()`: Archive your conversation, and this function works only for Single character chat.  
+     * - `duplicate_conversation()`: Duplicate your conversation, and this function works only for Single character chat.  
+     * - `rename_conversation()`: Rename your conversation, and this function works only for Single character chat.
     */
     chat = new Chat_Class(this.#prop) // Chat Class
 
