@@ -1,6 +1,6 @@
 {
     "name": "cainode",
-    "version": "1.1.4",
+    "version": "1.1.5",
     "description": "A lightweight unofficial Character.AI API using Node JS",
     "main": "index.js",
     "type": "module",
@@ -21,7 +21,7 @@
         "cainode"
     ],
     "dependencies": {
-	    "ws": "^8.17.1"
+        "ws": "^8.17.1"
     },
     "optionalDependencies": {
         "@livekit/rtc-node": "^0.7.0",
