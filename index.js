@@ -1,6 +1,19 @@
 import WebSocket from "ws";
 import EventEmitter from "node:events";
-const livekit = await import("@livekit/rtc-node").catch(_ => {_})
+const livekit = await import("@livekit/rtc-node").catch(_ => {_});
+let fetch;
+
+async function load() {
+    if (typeof process !== "undefined" && process.versions && process.versions.node && Number(process.version.substring(1, 3)) < 18) {
+        fetch = await import("node-fetch")
+        .then(module => module.default)
+        .catch(e => {
+            throw "Please install node-fetch by typing 'npm install node-fetch'.";
+        });
+    } else fetch = global.fetch;
+}
+
+await load();
 
 function wait(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -703,6 +716,7 @@ class Explore_Class {
      * @property {string} characters[].translations.greeting.pt_BR
      * @property {string} characters[].translations.greeting.zh_CN
      * @property {string | undefined} characters[].default_voice_id
+     * @property {string} characters[].short_hash
     */
 
     /**
@@ -760,6 +774,19 @@ class Explore_Class {
     async featured() {
         if (!this.#prop.token) throw "Please login first."
         return await (await https_fetch("https://neo.character.ai/recommendation/v1/featured", "GET", {"Authorization": `Token ${this.#prop.token}`})).json()
+    }
+
+    /**
+     * Get the list simillar character from ID character.  
+     *   
+     * Example: `await library_name.explore.simillar_char(char_id)`
+     * 
+     * @returns {Promise<ExploreCharacter>}
+    */
+    async simillar_char(char_id) {
+        if (!this.#prop.token) throw "Please login first.";
+        if (!char_id) throw "Character ID cannot be empty! Please input the Character ID.";
+        return await (await https_fetch(`https://neo.character.ai/recommendation/v1/character/${char_id}`, "GET", {"Authorization": `Token ${this.#prop.token}`})).json();
     }
 
     /**
@@ -991,7 +1018,8 @@ class Character_Class {
     /**
      * Get a list of recent chat activity.  
      *   
-     * Example: `await library_name.character.recent_list()`
+     * Example: `await library_name.character.recent_list()`  
+     * 
      * 
      * @returns {Promise<CharacterRecentList>}
     */
@@ -1005,25 +1033,50 @@ class Character_Class {
     /**
      * Connect client to character chat.  
      *   
-     * Example: `await library_name.character.connect("Character ID")`
+     * Example  
+     * - Connect to character you already talk or new character: `await library_name.character.connect("Character ID")`  
+     * - Connect to the new character and without greeting: `await library_name.character.connect("Character ID", false)`  
      * 
      * @param {string} char_id 
+     * @param {boolean} is_greeting
      * @returns {Promise<CharacterRecentList>}
     */
-    async connect(char_id) {
+    async connect(char_id, is_greeting = true) {
         if (!this.#prop.token) throw "Please login first."
-        if (this.#prop.join_type == 2) throw "You're already connectetd in Group Chat, please disconnect first"
-
-        const res = await (await https_fetch(`https://neo.character.ai/chats/recent/${char_id}`, "GET", {
+        if (this.#prop.join_type) throw "You're already connectetd to another chat or group chat, please disconnect first"
+        let res = await (await https_fetch(`https://neo.character.ai/chats/recent/${char_id}`, "GET", {
             'Authorization': `Token ${this.#prop.token}`
         })).json()
+
+        if (!res.chats) {
+            this.#prop.current_chat_id = generateRandomUUID();
+            await send_ws(this.#prop.ws[1], JSON.stringify({
+                "command": "create_chat",
+                "request_id": generateRandomUUID().slice(0, -12) + char_id.slice(char_id.length - 12),
+                "payload": {
+                    "chat": {
+                        "chat_id": this.#prop.current_chat_id,
+                        "creator_id": `${this.#prop.user_data.user.user.id}`,
+                        "visibility": "VISIBILITY_PRIVATE",
+                        "character_id": char_id,
+                        "type": "TYPE_ONE_ON_ONE"
+                    },
+                    "with_greeting": is_greeting
+                }
+            }), true, 1, false, true)
+
+            res = await (await https_fetch(`https://neo.character.ai/chats/recent/${char_id}`, "GET", {
+                'Authorization': `Token ${this.#prop.token}`
+            })).json()
+        }
+        
         await https_fetch(`https://neo.character.ai/chat/${res.chats[0].chat_id}/resurrect`, "GET", {
             'Authorization': `Token ${this.#prop.token}`
         });
 
+        this.#prop.current_chat_id = res.chats[0].chat_id
         this.#prop.join_type = 1;
         this.#prop.current_char_id_chat = char_id
-        this.#prop.current_chat_id = res.chats[0].chat_id
 
         return res;
     }
@@ -1982,6 +2035,7 @@ class Chat_Class {
      * @property {object} turns[].author
      * @property {string} turns[].author.author_id
      * @property {string} turns[].author.name
+     * @property {boolean} turns[].author.is_human
      * @property {object[]} turns[].candidates
      * @property {string} turns[].candidates[].candidate_id
      * @property {string} turns[].candidates[].create_time
@@ -2336,9 +2390,9 @@ class Livekit_Class {
      * ```
      * @param {Buffer} pcm_data
      * @returns {Promise<void>}
-     */
+    */
     async input_write(pcm_data) {
-        pcm_data = new Int16Array(pcm_data.buffer, pcm_data.byteOffset, pcm_data.length / 2)
+        pcm_data = new Int16Array(pcm_data.buffer, pcm_data.byteOffset, pcm_data.length / 2);
         await this.#livekit_audioSource.captureFrame(
             new livekit.AudioFrame(
                 pcm_data,
@@ -2525,6 +2579,11 @@ class Voice_Class {
                 "username": this.#prop.user_data.user.user.username,
             }))).json()
 
+            if (connect_result.message) {
+                if (connect_result.message.includes("error reading voice")) throw "Error: Voice ID not found! Please input a correct Voice ID."
+                else throw `Error: ${connect_result.message}`
+            }
+            
             this.#prop.livekit_room = new livekit.Room()
             await this.#prop.livekit_room.connect(connect_result.lkUrl, connect_result.lkToken, {
                 autoSubscribe: true,
@@ -2572,7 +2631,6 @@ class Voice_Class {
         this.#prop.is_connected_livekit_room = 0;
     }
 }
-
 
 class CAINode extends EventEmitter {
     #prop = new CAINode_prop(); // Property
@@ -2724,18 +2782,30 @@ class CAINode extends EventEmitter {
     /**
      * Generate your Character.AI Token by email.  
      *   
-     * Example: `console.log(await library_name.generate_token("your@email.com"))`
-     * @param {string} email 
+     * Parameter 2: Timeout per 2 seconds (default 30, so it means = 60 seconds or 1 minute)  
+     * You can disable the Timeout by set the parameter into 0.  
+     *   
+     * Example  
+     * - Without Timer: `console.log(await library_name.generate_token("your@email.com", 0))`  
+     * - With Timer: `console.log(await library_name.generate_token("your@email.com", 60))`
+     * - With callback: `console.log(await library_name.generate_token("your@email.com", 30, funtion() {console.log("Please check your email")}, function() {console.log("timeout!")}))`
+     * 
+     * @param {string} email
+     * @param {number | null} timeout_per_2s
+     * @param {Function | null} mail_sent_cb
+     * @param {Function | null} timeout_cb
      * @returns {Promise<string>}
     */
-    generate_token(email) {
+    generate_token(email, timeout_per_2s = 30, mail_sent_cb = null, timeout_cb = null) {
+        let current_timer = 1;
         return new Promise(async resolve => {
             let res;
             const polling_uuid = (await (await https_fetch("https://character.ai/api/trpc/auth.login?batch=1", "POST", {
                 "Content-Type": "application/json"
             }, JSON.stringify({"0":{"json":{"email":email}}}))).json())[0].result.data.json
             if (!polling_uuid) throw "Please input the correct email."
-            console.log("Please check your email")
+            if (!mail_sent_cb) console.log("Please check your email.");
+            else mail_sent_cb();
             while(1) {
                 await wait(2000)
                 try {
@@ -2750,6 +2820,14 @@ class CAINode extends EventEmitter {
                     }, JSON.stringify({"id_token":res}))).json()).key
                     break;
                 }
+
+                if (!timeout_per_2s) continue;
+                if (current_timer >= timeout_per_2s) {
+                    if (!timeout_cb) throw "Timeout.";
+                    else resolve(timeout_cb());
+                    break;
+                }
+                else current_timer++;
             }
             resolve(res);
         })

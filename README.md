@@ -16,13 +16,13 @@ CAINode is now using ESM. Please read at [Getting Started](#getting-started) fir
 
 # Table of contents
 - [Getting Started](#getting-started)
-   - [Install](#install)  
-   - [Example Usage](#example-usage)  
-- [Main Function List](#main-function-list)  
-   - [login](#login)  
+   - [Install](#install)
+   - [Example Usage](#example-usage)
+- [Main Function List](#main-function-list)
+   - [login](#login)
    - [generate_token](#generate_token)
-   - [logout](#logout)  
-- [User Function List](#userinfo)
+   - [logout](#logout)
+- [User Function List](#user-function-list)
    - [user.info](#userinfo)
    - [user.change_info](#userchange_info)
    - [user.settings](#usersettings)
@@ -99,6 +99,7 @@ To install CAINode, you can simply do
    ```
    bun install cainode
    ```
+[Back to the Table of contents](#table-of-contents)
 ## Example usage
 - CommonJS<br><br>
    ```js
@@ -120,55 +121,52 @@ To install CAINode, you can simply do
    console.log("Logged in!");
    await client.logout();
    ```
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 # Main function list
 ## login()
 Start client initialization with login, make sure your token is valid so that the login session can run properly.
 
-- get C.AI Session Token
-This is the tutorial of how to get C.AI Session Token
-### On PC:
-1. Open the Character.AI website in your browser (https://beta.character.ai)
-2. Open the developer tools (<kbd>F12</kbd>, <kbd>Ctrl+Shift+I</kbd>, or <kbd>Cmd+J</kbd>)
-3. Go to the `Application` tab
-4. Go to the `Storage` section and click on `Local Storage`
-5. Look for the `char_token` key
-6. Open the object, right click on value and copy your session token.
+To get Character.AI Session Token, You can use [generate_token()](#generate_token) function.
 
-![Session_Token](https://github.com/realcoloride/node_characterai/assets/108619637/1d46db04-0744-42d2-a6d7-35152b967a82)
-
-### On Mobile:
-
-1. Open the Character.AI website in your browser (https://beta.character.ai)
-2. Open the URL bar, write `javascript:` (case sensitive) and paste the following:
-```javascript
-(function(){let e=window.localStorage["char_token"];if(!e){alert("You need to log in first!");return;}let t=JSON.parse(e).value;document.documentElement.innerHTML=`<div><i><p>provided by node_characterai - <a href="https://github.com/realcoloride/node_characterai?tab=readme-ov-file#using-an-access-token">click here for more information</a></p></i><p>Here is your session token:</p><input value="${t}" readonly><p><strong>Do not share this with anyone unless you know what you are doing! Those are your personal session token. If stolen or requested by someone you don't trust, they could access your account without your consent; if so, please close the page immediately.</strong></p><button id="copy" onclick="navigator.clipboard.writeText('${t}'); alert('Copied to clipboard!')">Copy session token to clipboard</button><button onclick="window.location.reload();">Refresh the page</button></div>`;localStorageKey=null;storageInformation=null;t=null;})();
-```
-3. The following page should appear:
-![Access_Token_Mobile](https://github.com/realcoloride/node_characterai/assets/108619637/516722db-a90f-4dd0-987e-fda01e68ac09)
-4. Click the respective buttons to copy your access token or id token to your clipboard.
-
-```js  
+```js
 await client.login("YOUR_CHARACTER_AI_TOKEN");  
 ```  
 | Param | Require | Type | Description |  
 | --- | --- | --- | --- |  
-| Token | `true` | `string` | Your character ai token used for client login. |
+| Token | `true` | `string` | Your Character.AI token used for client login. |
 
-[Back to Top](#cainode)
-
+[Back to the Table of contents](#table-of-contents)
 ## generate_token()
 Generate your Character.AI Token by email.
 
-```js
-await client.generate_token("your@email.com");
-```
+- Without timeout
+   ```js
+   await client.generate_token("your@email.com", 0);
+   ```
+
+- With timeout (per 2 seconds)
+   ```js
+   await client.generate_token("your@email.com", 30); // and it will end in 60 seconds.
+   ```
+
+- With callback
+   ```js
+   await client.generate_token("your@email.com", 30, function() {
+      console.log("Please check your email.")
+   }, function() {
+      console.log("Time is up! Please try again later.")
+   });
+   ```
+
 | Param | Require | Type | Description |  
 | --- | --- | --- | --- |  
 | email | `true` | `string` | Your email to send a verification link. |
+| timeout_per_2s | `false` | `number` | Max waiting for verification. (default = 30) |
+| mail_sent_cb | `false` | `Function` | Callback when the mail was sent to the target. |
+| timeout_cb | `false` | `Function` | Callback when the timeout was reached. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## logout()
@@ -181,21 +179,21 @@ await client.logout();
 | --- | --- | --- | --- |  
 | none | `false` | `null` | Used for client logout from character ai. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
+# User function list
 
 ## user.info()
 Get current information account.
 
 ```js
-client.user.info;
+console.log(client.user.info);
 ```
 | Param | Require | Type | Description |  
 | --- | --- | --- | --- |  
 | none | `false` | `null` | Get user information account. |
 
-[Back to Top](#cainode)
-
+[Back to the Table of contents](#table-of-contents)
 
 ## user.public_info()
 Get user public information account.
@@ -205,9 +203,9 @@ await client.user.public_info();
 ```
 | Param | Require | Type | Description |  
 | --- | --- | --- | --- |  
-| username | `false` | `string` | Target Character.AI username account. |
+| username | `false` | `string` | Target Character.AI username account. (default = null, and it will target to your own account.) |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## user.change_info()
@@ -220,10 +218,10 @@ await client.user.change_info();
 | --- | --- | --- | --- | 
 | username | `false` | `string` | Change your old username to new username. |
 | name | `false` | `string` | Change your old name to new name. |
-| avatar_rel_path | `false` | `string` | Change your old avatar_rel_path link to new avatar_rel_path link.<br>Warning: avatar_rel_path image link must be generated/uploaded to Character.AI server. |
+| avatar_rel_path | `false` | `string` | Change your old avatar_rel_path link to new avatar_rel_path link.<br><br><b>Warning</b>: avatar_rel_path image link <b>must be generated/uploaded</b> to Character.AI server. |
 | bio | `false` | `string` | Change your old bio to new bio. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## user.settings()
@@ -232,11 +230,13 @@ Get account settings information data.
 ```js
 await client.user.settings();
 ```
+
 | Param | Require | Type | Description | 
 | --- | --- | --- | --- | 
 | none | `false` | `null` | Get user settings information. |
 
-[Back to Top](#cainode)
+
+[Back to the Table of contents](#table-of-contents)
 
 
 ## user.public_following_list()
@@ -250,7 +250,7 @@ await client.user.public_following_list();
 | username | `true` | `string` | Target Character.AI username account. |
 | page_param | `false` | `number` | Page parameter. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## user.public_followers_list()
@@ -264,7 +264,7 @@ await client.user.public_followers_list();
 | username | `true` | `string` | Target Character.AI username account. |
 | page_param | `false` | `number` | Page parameter. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## user.following_list_name()
@@ -277,7 +277,7 @@ await client.user.following_list_name();
 | --- | --- | --- | --- | 
 | none | `false` | `null` | Get account following name list. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## user.followers_list_name()
@@ -290,7 +290,7 @@ await client.user.followers_list_name();
 | --- | --- | --- | --- | 
 | none | `false` | `null` | Get account followers name list. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## user.follow()
@@ -303,7 +303,7 @@ await client.user.follow();
 | --- | --- | --- | --- | 
 | username | `true` | `string` | Target Character.AI username account. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## user.unfollow()
@@ -316,9 +316,9 @@ await client.user.unfollow();
 | --- | --- | --- | --- | 
 | username | `true` | `string` | Target Character.AI username account. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
-
+# Image function list
 ## image.generate_avatar()
 Generate avatar image using prompt.
 
@@ -329,7 +329,7 @@ await client.image.generate_avatar(prompt_name);
 | --- | --- | --- | --- |  
 | prompt_name | `true` | `String` | Prompt used for generating avatar image. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## image.generate_image()
@@ -342,7 +342,7 @@ await client.image.generate_image(prompt_name);
 | --- | --- | --- | --- |  
 | prompt_name | `true` | `String` | Prompt used for generating AI image. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## persona.create()
@@ -356,7 +356,7 @@ await client.persona.create(name, description);
 |  name  | `true` | `String` | Your persona name |
 | description | `true` | `String` | Description of your personality, this section is used to describe yourself so that your AI character knows who you are. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## persona.set_default()
@@ -369,7 +369,7 @@ await client.persona.set_default(external_persona_id);
 | --- | --- | --- | --- | 
 | external_persona_id | `true` | `String` | External personality id that you have. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## persona.list()
@@ -382,7 +382,7 @@ await client.persona.list();
 | --- | --- | --- | --- | 
 | none | `false` | `null` | Get all your personality data. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## persona.info()
@@ -395,7 +395,7 @@ await client.persona.info(external_persona_id);
 | --- | --- | --- | --- | 
 | external_persona_id | `true` | `String` | External personality id that you have. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## persona.update()
@@ -410,7 +410,7 @@ await client.persona.update(external_persona_id, name, description);
 | name | `true` | `String` | Your new personality name. |
 | description | `true` | `String` | Your new personality detail. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## persona.delete()
@@ -423,7 +423,7 @@ await client.persona.delete(external_persona_id);
 | --- | --- | --- | --- | 
 | external_persona_id | `true` | `String` | External personality id that you have. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## persona.set_character()
@@ -437,7 +437,7 @@ await client.persona.set_character(character_id, external_persona_id);
 | character_id | `true` | `String` | A character id that you want to set a custom personality. |
 | external_persona_id | `true` | `String` | Your personality id that you use to let AI characters know who you are. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## explore.featured()
@@ -450,7 +450,7 @@ await client.explore.featured();
 | --- | --- | --- | --- | 
 | none | `false` | `null` | Get all featured data. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## explore.for_you()
@@ -463,7 +463,7 @@ await client.explore.for_you();
 | --- | --- | --- | --- | 
 | none | `false` | `null` | Get all for you data. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## explore.character_categories()
@@ -476,7 +476,7 @@ await client.explore.character_categories();
 | --- | --- | --- | --- | 
 | none | `false` | `null` | Get all character categories data. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## character.votes()
@@ -489,7 +489,7 @@ await client.character.votes(character_id);
 | --- | --- | --- | --- | 
 | character_id | `true` | `String` | The character id you are aiming for. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## character.votes_array()
@@ -502,7 +502,7 @@ await client.character.votes_array(character_id);
 | --- | --- | --- | --- | 
 | character_id | `true` | `String` | The character id you are aiming for. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## character.vote()
@@ -516,7 +516,7 @@ await client.character.vote(character_id, vote);
 | character_id | `true` | `String` | The character id you are aiming for. |
 | vote | `true` | `Boolean` | Character vote options, `true = like`, `false = dislike`, and `null = cancel` |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## character.search()
@@ -529,7 +529,7 @@ await client.character.search(name);
 | --- | --- | --- | --- | 
 | name | `true` | `String` | Search queries to find characters. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## character.search_suggest()
@@ -542,7 +542,7 @@ await client.character.search_suggest(name);
 | --- | --- | --- | --- | 
 | name | `true` | `String` | Character name query. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## character.info()
@@ -555,7 +555,7 @@ await client.character.info(character_id);
 | --- | --- | --- | --- | 
 | character_id | `true` | `String` | Your character id. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## character.recent_list()
@@ -568,7 +568,7 @@ await client.character.recent_list();
 | --- | --- | --- | --- | 
 | none | `false` | `null` | Get recent character chats. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## character.connect()
@@ -581,7 +581,7 @@ await client.character.connect(character_id);
 | --- | --- | --- | --- | 
 | character_id | `true` | `String` | Your character id. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## character.disconnect()
@@ -594,7 +594,7 @@ await client.character.disconnect();
 | --- | --- | --- | --- | 
 | none | `false` | `null` | Disconnecting client from character chat. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## character.send_message()
@@ -609,7 +609,7 @@ await client.character.send_message(message, manual_turn, image_url);
 | manual_turn | `false` | `Boolean` | If the value of `manual_turn` is set to `true` then the message that the client receives must be generated with `character.generate_turn()` so that the message is obtained by the client. |
 | image_url | `false` | `String` | The image content that the character will see, must be a url and not a file type or a file with a type other than image. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## character.generate_turn()
@@ -622,7 +622,7 @@ await client.character.generate_turn();
 | --- | --- | --- | --- | 
 | none | `false` | `null` | Generate message response |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## character.generate_turn_candidate()
@@ -635,7 +635,7 @@ await client.character.generate_turn_candidate(turn_id);
 | --- | --- | --- | --- | 
 | turn_id | `true` | `String` | `turn_id` or `message_id` from the character. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## character.reset_conversation()
@@ -648,7 +648,7 @@ await client.character.reset_conversation();
 | --- | --- | --- | --- | 
 | none | `false` | `null` | none |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## character.delete_message()
@@ -661,7 +661,7 @@ await client.character.delete_message(turn_id);
 | --- | --- | --- | --- | 
 | turn_id | `true` | `String` | `turn_id` or `message_id` from the character. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## character.edit_message()
@@ -676,7 +676,7 @@ await client.character.edit_message(candidate_id, turn_id, new_message);
 | turn_id | `true` | `String` | `turn_id` or `message_id` from the character. |
 | new_message | `true` | `String` | New character message |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 
@@ -690,7 +690,7 @@ await client.group_chat.list();
 | --- | --- | --- | --- | 
 | none | `false` | `null` | none |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## group_chat.connect()
@@ -703,7 +703,7 @@ await client.group_chat.connect(room_id);
 | --- | --- | --- | --- | 
 | room_id | `true` | `String` | Your group chat id. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## group_chat.disconnect()
@@ -716,7 +716,7 @@ await client.group_chat.disconnect(room_id);
 | --- | --- | --- | --- | 
 | room_id | `true` | `String` | Your group chat id. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## group_chat.create()
@@ -730,7 +730,7 @@ await client.group_chat.create(title_room, character_id);
 | title_room | `true` | `String` | Your custom title room name. |
 | character_id | `true` | `String` | Your character id will be added to the group chat. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## group_chat.delete()
@@ -743,7 +743,7 @@ await client.group_chat.delete(room_id);
 | --- | --- | --- | --- | 
 | room_id | `true` | `String` | Your group chat id. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## group_chat.rename()
@@ -757,7 +757,7 @@ await client.group_chat.rename(new_name, room_id);
 | new_name | `true` | `String` | New name for your group chat. |
 | room_id | `true` | `String` | Your group chat id. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## group_chat.join_group_invite()
@@ -770,7 +770,7 @@ await client.group_chat.join_group_invite(invite_code);
 | --- | --- | --- | --- | 
 | invite_code | `true` | `String` | The group chat miinvite code. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## group_chat.char_add()
@@ -783,7 +783,7 @@ await client.group_chat.char_add(character_id);
 | --- | --- | --- | --- | 
 | character_id | `true` | `String` | Character id to be added to the group chat. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## group_chat.char_remove()
@@ -796,7 +796,7 @@ await client.group_chat.char_remove(character_id);
 | --- | --- | --- | --- | 
 | character_id | `true` | `String` | Character id to be removed from the group chat. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## group_chat.send_message()
@@ -810,7 +810,7 @@ await client.character.send_message(message, image_url);
 | message | `true` | `String` | Message content. |
 | image_url | `false` | `String` | The image content that the character will see, must be a url and not a file type or a file with a type other than image. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## group_chat.generate_turn()
@@ -823,7 +823,7 @@ await client.group_chat.generate_turn();
 | --- | --- | --- | --- | 
 | none | `false` | `null` | Generate message response |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## group_chat.generate_turn_candidate()
@@ -836,7 +836,7 @@ await client.group_chat.generate_turn_candidate(turn_id);
 | --- | --- | --- | --- | 
 | turn_id | `true` | `String` | `turn_id` or `message_id` from the character. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## group_chat.reset_conversation()
@@ -849,7 +849,7 @@ await client.group_chat.reset_conversation();
 | --- | --- | --- | --- | 
 | none | `false` | `null` | Reset conversation. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## group_chat.delete_message()
@@ -862,7 +862,7 @@ await client.group_chat.delete_message(turn_id);
 | --- | --- | --- | --- | 
 | turn_id | `true` | `String` | `turn_id` or `message_id` from the character. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## group_chat.edit_message()
@@ -877,7 +877,7 @@ await client.group_chat.edit_message(candidate_id, turn_id, new_message);
 | turn_id | `true` | `String` | `turn_id` or `message_id` from the character. |
 | new_message | `true` | `String` | New character message |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## group_chat.select_turn()
@@ -890,7 +890,7 @@ await client.group_chat.select_turn(turn_id);
 | --- | --- | --- | --- | 
 | turn_id | `true` | `String` | `turn_id` or `message_id` from the character. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 ## chat.history_chat_turns()
@@ -903,7 +903,7 @@ await client.chat.history_chat_turns(chat_id);
 | --- | --- | --- | --- | 
 | chat_id | `true` | `String` | Group chat or single chat ID. |
 
-[Back to Top](#cainode)
+[Back to the Table of contents](#table-of-contents)
 
 
 
