@@ -1350,17 +1350,18 @@ class Character_Class {
     /**
      * Generate text messages from character to voice audio.  
      *   
-     * Example (if you have Voice ID): `await library_name.character.replay_tts("Turn ID", "Candidate ID", "fill the Voice Character ID here")`  
-     * Example (if you don't have Voice ID and want to use Voice Query instead): `await library_name.character.replay_tts("Turn ID", "Candidate ID", "", "fill Voice Character Query here")`
+     * Example:
+     * - if you have Voice ID: `await library_name.character.replay_tts("Turn ID", "Candidate ID", "fill the Voice Character ID here")`  
+     * - if you don't have Voice ID and want to use Voice Query instead: `await library_name.character.replay_tts("Turn ID", "Candidate ID", "fill the Voice Query here", true)`
      * 
-     * @param {string} candidate_id
      * @param {string} turn_id
-     * @param {string} voice_id
-     * @param {string} voice_query
+     * @param {string} candidate_id
+     * @param {string} voice_id_or_query
+     * @param {boolean} using_voice_query
      * 
      * @returns {Promise<{replayUrl: string}>}
     */
-    async replay_tts(turn_id, candidate_id, voice_id = "", voice_query = "") {
+    async replay_tts(turn_id, candidate_id, voice_id_or_query = "", using_voice_query = false) {
         if (!this.#prop.token) throw "Please login first."
         if (!this.#prop.join_type || this.#prop.join_type != 1) throw "This function only works when you're connected on Single Character Chat."
         if (!turn_id && !candidate_id) throw "Please fill Turn ID and Candidate ID."
@@ -1373,8 +1374,13 @@ class Character_Class {
             "roomId": this.#prop.current_chat_id,
             "turnId": turn_id,
             "candidateId": candidate_id,
-            "voiceId": voice_id,
-            "voiceQuery": voice_query
+            ...(using_voice_query ? {
+                "voiceId": "",
+                "voiceQuery": voice_id_or_query
+            } : {
+                "voiceId": voice_id_or_query,
+                "voiceQuery": ""
+            }),
         }))).json()
     }
 
@@ -1382,8 +1388,8 @@ class Character_Class {
      * Get character current voice info.  
      *   
      * Example:  
-     * - Auto (you must already connected with character): `library_name.character.current_voice()`  
-     * - Manual: `library_name.character.current_voice("Character ID")`
+     * - Auto (you must already connected with character): `await library_name.character.current_voice()`  
+     * - Manual: `await library_name.character.current_voice("Character ID")`
      * 
      * @param {string | null} character_id  
      * @returns {Promise<{character_external_id: string, voice_id: string}>}
@@ -2171,7 +2177,7 @@ class Chat_Class {
     }
 
     /**
-     * Get list of your history conversation from character, and this function is for Single character only.  
+     * Get list of your history conversation from character. This function is for Single character only.  
      *   
      * Example
      * - Auto (Already connected to the Single character chat): `await library_name.chat.history_conversation_list()`  
@@ -2180,7 +2186,7 @@ class Chat_Class {
      * @param {string} character_id
      * @returns {Promise<HistoryArchiveConversationInfo>}
     */
-    async history_conversation_list(character_id) {
+    async history_conversation_list(character_id = "") {
         if (!this.#prop.token) throw "Please login first."
         if (!this.#prop.current_char_id_chat && !character_id) throw "Please input the Character ID, or you must connected to the single character chat."
         
@@ -2190,7 +2196,7 @@ class Chat_Class {
     }
 
     /**
-     * Set conversation chat, and bring the history chat into current chat.  
+     * Set conversation chat, and bring the history chat into current chat. This function is for Single character only.  
      *   
      * Example: `await library_name.chat.set_conversation_chat("Chat ID")`
      * 
@@ -2209,14 +2215,14 @@ class Chat_Class {
     }
 
     /**
-     * Pin message.  
+     * Pin message. This function is for Single character only.  
      *   
      * - if you set the second parameter false, it will unpin the message.  
      * - if you set the second parameter true, it will pin the message.  
      *   
      * Example  
-     * - Auto (if your're already connected to the single character): `await library_name.character.pin_message("turn ID")`  
-     * - Manual: `await library_name.character.pin_message("turn ID", true, "Chat ID")`
+     * - Auto (if your're already connected to the single character): `await library_name.chat.pin_message("turn ID")`  
+     * - Manual: `await library_name.chat.pin_message("turn ID", true, "Chat ID")`
      * 
      * @param {string} turn_id
      * @param {boolean} pinned
@@ -2242,7 +2248,7 @@ class Chat_Class {
     }
 
     /**
-     * Get list pinned message from chat, and this function works only for single character chat.  
+     * Get list pinned message from chat. This function works only for single character chat.  
      *   
      * Example: `await library_name.chat.list_pinned_message("Chat ID")`
      * 
@@ -2259,7 +2265,7 @@ class Chat_Class {
     }
 
     /**
-     * Archive your conversation, and this function works only for single character chat.  
+     * Archive your conversation. This function works only for single character chat.  
      *   
      * Example  
      * - If you want archive the conversation: `await library_name.chat.archive_conversation("Chat ID", true)`  
@@ -2278,7 +2284,7 @@ class Chat_Class {
     }
 
     /**
-     * Archive your conversation, and this function works only for single character chat.  
+     * Duplicate your conversation. This function works only for single character chat.  
      *   
      * Example: `await library_name.chat.duplicate_conversation("Chat ID", "Turn ID")`
      * 
@@ -2298,7 +2304,7 @@ class Chat_Class {
     }
 
     /**
-     * Rename your conversation, and this function works only for single character chat.  
+     * Rename your conversation title. This function works only for single character chat.  
      *   
      * Example: `await library_name.chat.rename_conversation("Chat ID", "Custom Name")`
      * 
@@ -2453,7 +2459,7 @@ class Voice_Class {
     }
 
     /**
-     * Get voice information.  
+     * Get a voice information.  
      *   
      * Example: `await library_name.voice.info("Voice ID")`
      * 
@@ -2698,9 +2704,11 @@ class CAINode extends EventEmitter {
      * - `send_message()`: Send message to character.  
      * - `generate_turn()`: Generating message response from character.  
      * - `generate_turn_candidate()`: Regenerate character message.  
-     * - `reset_conversation()`: Reset the conversation between you and the character.  
+     * - `create_new_conversation()`: it will create a new conversation and your current conversation will save on the history.  
      * - `delete_message()`: Delete character message.  
-     * - `edit_message()`: Edit the character message.
+     * - `edit_message()`: Edit the character message.  
+     * - `replay_tts()`: Generate text messages from character to voice audio.  
+     * - `current_voice()`: Get character current voice info.
     */
     character = new Character_Class(this.#prop); // Character Class
 
@@ -2762,7 +2770,9 @@ class CAINode extends EventEmitter {
      * @returns {Promise<boolean>}
     */
     async login(token) {
-        this.#prop.edge_rollout = (await https_fetch("https://character.ai/", "GET")).headers.get("set-cookie").match(/edge_rollout=(\d+)/)[1]
+        this.#prop.edge_rollout = (await https_fetch("https://character.ai/", "GET")).headers.get("set-cookie").match(/edge_rollout=(\d+)/)
+        if (this.#prop.edge_rollout !== null) this.#prop.edge_rollout = this.#prop.edge_rollout[1];
+
         this.#prop.user_data = await (await https_fetch("https://plus.character.ai/chat/user/", "GET", {
             'Authorization': `Token ${token}`
         })).text()
@@ -2772,8 +2782,8 @@ class CAINode extends EventEmitter {
         if (!this.#prop.user_data.user) throw "Not a valid Character.AI Token."
 
         this.#prop.ws = [
-            await open_ws("wss://neo.character.ai/connection/websocket", `edge_rollout=${this.#prop.edge_rollout}; HTTP_AUTHORIZATION="Token ${token}"`, this.#prop.user_data.user.user.id, this),
-            await open_ws("wss://neo.character.ai/ws/", `edge_rollout=${this.#prop.edge_rollout}; HTTP_AUTHORIZATION="Token ${token}"`, 0, this)
+            await open_ws("wss://neo.character.ai/connection/websocket", `${this.#prop.edge_rollout !== null ? `edge_rollout=${this.#prop.edge_rollout}; ` : ""}HTTP_AUTHORIZATION="Token ${token}"`, this.#prop.user_data.user.user.id, this),
+            await open_ws("wss://neo.character.ai/ws/", `${this.#prop.edge_rollout !== null ? `edge_rollout=${this.#prop.edge_rollout}; ` : ""}HTTP_AUTHORIZATION="Token ${token}"`, 0, this)
         ]
         this.#prop.token = token
         return true;
@@ -2791,8 +2801,8 @@ class CAINode extends EventEmitter {
      * - With callback: `console.log(await library_name.generate_token("your@email.com", 30, funtion() {console.log("Please check your email")}, function() {console.log("timeout!")}))`
      * 
      * @param {string} email
-     * @param {number | null} timeout_per_2s
      * @param {Function | null} mail_sent_cb
+     * @param {number} timeout_per_2s
      * @param {Function | null} timeout_cb
      * @returns {Promise<string>}
     */
