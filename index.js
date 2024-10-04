@@ -1365,9 +1365,9 @@ class Character_Class {
         if (!this.#prop.token) throw "Please login first."
         if (!this.#prop.join_type || this.#prop.join_type != 1) throw "This function only works when you're connected on Single Character Chat."
         if (!turn_id && !candidate_id) throw "Please fill Turn ID and Candidate ID."
-        if (!voice_id || !voice_query) throw "Please fill Voice query or Voice ID."
+        if (!voice_id_or_query) throw "Please fill Voice query or Voice ID."
 
-        return await (await https_fetch("https://neo.character.ai/multimodal/api/v1/memo/replay", "GET", {
+        return await (await https_fetch("https://neo.character.ai/multimodal/api/v1/memo/replay", "POST", {
             "Authorization": `Token ${this.#prop.token}`,
             "Content-Type": "application/json"
         }, JSON.stringify({
