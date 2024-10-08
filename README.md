@@ -46,6 +46,7 @@ CAINode is now using ESM. Please read at [Getting Started](#getting-started) fir
 - [Explore Function List](#explore-function-list)
    - [explore.featured](#explorefeatured)
    - [explore.for_you](#explorefor_you)
+   - [explore.simillar_char](#exploresimillar_char)
    - [explore.character_categories](#explorecharacter_categories)
 - [Character Function list](#character-function-list)
    - [character.votes](#charactervotes)
@@ -471,6 +472,18 @@ To install CAINode, you can simply do
 
    [Back to the Table of contents](#table-of-contents)
 
+- ## explore.simillar_char()
+   Get the list simillar character from ID character.
+
+   ```js
+   await client.explore.simillar_char(char_id);
+   ```
+
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | char_id | `true` | `string` | Character ID. |
+
+   [Back to the Table of contents](#table-of-contents)
 
 - ## explore.character_categories()
    Get the list of characters from the character category exploration.
