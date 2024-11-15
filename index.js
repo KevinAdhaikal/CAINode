@@ -255,10 +255,10 @@ class User_Class {
      * Example: `library_name.user.change_info("username", "name", "avatar_rel_path", "bio")`  
      * - Warning: avatar_rel_path image link must be generated/uploaded to Character.AI server.
      * 
-     * @param {string | null} username
-     * @param {string | null} name
-     * @param {string | null} avatar_rel_path
-     * @param {string | null} bio
+     * @param {string | undefined} username
+     * @param {string | undefined} name
+     * @param {string | undefined} avatar_rel_path
+     * @param {string | undefined} bio
      * 
      * @returns {Promise<StatusInfo>}
     */
@@ -303,8 +303,8 @@ class User_Class {
      * - Get someone public user following list: `await library_name.user.public_following_list("Username", page_param)`  
      * - Get your own user following list: `await library_name.user.public_following_list("", page_param)`
      * 
-     * @param {string | null} username
-     * @param {number | null} page_param
+     * @param {string | undefined} username
+     * @param {number | undefined} page_param
      * 
      * @returns {Promise<UserPublicFollowInfo>}
     */
@@ -322,8 +322,8 @@ class User_Class {
      * - Get someone public user followers list: `await library_name.user.public_followers_list("Username", page_param)`  
      * - Get your own user followers list: `await library_name.user.public_followers_list("", page_param)`
      * 
-     * @param {string | null} username
-     * @param {number | null} page_param
+     * @param {string | undefined} username
+     * @param {number | undefined} page_param
      * 
      * @returns {Promise<UserPublicFollowInfo>}
     */
@@ -544,7 +544,7 @@ class Persona_Class {
      * - Set: `await library_name.persona.set_default("Your External Persona ID")`  
      * - Unset: `await library_name.persona.set_default()`
      * 
-     * @param {string | null} external_persona_id
+     * @param {string | undefined} external_persona_id
      * @returns {Promise<{error: string, persona: Persona}>}
     */
     async set_default(external_persona_id = "") {
@@ -657,7 +657,7 @@ class Persona_Class {
      * - Unset: `await library_name.persona.set_character("Your Character ID")`
      * 
      * @param {string} character_id
-     * @param {string | null} external_persona_id
+     * @param {string | undefined} external_persona_id
      * @returns {Promise<boolean>}
     */
     async set_character(character_id, external_persona_id = "") {
@@ -759,13 +759,54 @@ class Explore_Class {
      * }} CharacterCategories
     */
 
+    /**
+     * @typedef {{
+     * "Helpers": CharacterCategoriesInformation[]
+     * "Anime Game Characters": CharacterCategoriesInformation[]
+     * "Games": CharacterCategoriesInformation[]
+     * "Anime": CharacterCategoriesInformation[]
+     * "Game Characters": CharacterCategoriesInformation[]
+     * "Movies & TV": CharacterCategoriesInformation[]
+     * "Comedy": CharacterCategoriesInformation[]
+     * "Books": CharacterCategoriesInformation[]
+     * "VTuber": CharacterCategoriesInformation[]
+     * "Image Generating": CharacterCategoriesInformation[]
+     * "Discussion": CharacterCategoriesInformation[]
+     * "Famous People": CharacterCategoriesInformation[]
+     * "Language Learning": CharacterCategoriesInformation[]
+     * "Religion": CharacterCategoriesInformation[]
+     * "History": CharacterCategoriesInformation[]
+     * "Animals": CharacterCategoriesInformation[]
+     * "Philosophy": CharacterCategoriesInformation[]
+     * "Politics": CharacterCategoriesInformation[]
+     * "Chinese": CharacterCategoriesInformation[]
+     * }} CharacterCategories
+    */
+
+    /**
+     * @typedef {{voices: [{
+     * id: string,
+     * name: string,
+     * description: string,
+     * gender: string,
+     * visibility: string,
+     * creatorInfo: {id: string, source: string, username: string},
+     * audioSourceType: string,
+     * previewText: string,
+     * previewAudioURI: string,
+     * backendProvider: string,
+     * backendId: string,
+     * internalStatus: string,
+     * lastUpdateTime: string
+     * }]}} FeaturedVoices
+   */
     #prop;
     constructor(prop) {
         this.#prop = prop;
     }
 
     /**
-     * Get the list of characters displayed by the Character.AI server.  
+     * Get a list of characters displayed by the Character.AI server.  
      *   
      * Example: `await library_name.explore.featured()`
      * 
@@ -777,7 +818,7 @@ class Explore_Class {
     }
 
     /**
-     * Get the list simillar character from ID character.  
+     * Get a list of simillar character from ID character.  
      *   
      * Example: `await library_name.explore.simillar_char(char_id)`
      * 
@@ -802,14 +843,25 @@ class Explore_Class {
     }
 
     /**
-     * Get the list of characters from the character category exploration.  
+     * Get a list of characters from the character category exploration.  
      *   
      * Example: `await library_name.explore.character_categories()`
      * 
      * @returns {Promise<CharacterCategories>}
     */
     async character_categories() {
-        return (await (await https_fetch("https://plus.character.ai/chat/curated_categories/characters/", "GET")).json()).characters_by_curated_category
+        return (await (await https_fetch("https://plus.character.ai/chat/curated_categories/characters/", "GET", {"Authorization": `Token ${this.#prop.token}`})).json()).characters_by_curated_category
+    }
+
+    /**
+     * Get a list of featured voices.  
+     *   
+     * Example: `await library_name.explore.featured_voices()`
+     * 
+     * @returns {Promise<FeaturedVoices>}
+    */
+    async featured_voices() {
+        return (await (await https_fetch("https://neo.character.ai/multimodal/api/v1/voices/featured", "GET", {"Authorization": `Token ${this.#prop.token}`})).json())
     }
 }
 
@@ -1020,7 +1072,6 @@ class Character_Class {
      *   
      * Example: `await library_name.character.recent_list()`  
      * 
-     * 
      * @returns {Promise<CharacterRecentList>}
     */
     async recent_list() {
@@ -1107,22 +1158,52 @@ class Character_Class {
     /**
      * Send message to character.  
      *   
-     * Example (Default)  
-     * - Without manual turn: `await library_name.character.send_message("Your Message")`  
-     * - With manual turn: `await library_name.character.send_message("Your Message", true)`  
+     * - Example (Default and if you're using `character.connect()` to connect to the Single Character.)  
+     *      - Without manual turn
+     *          ```js
+     *          await library_name.character.send_message("Your Message", false, "URL Link (you can empty it if you don't want to send it)")
+     *          ```  
+     *      - With manual turn
+     *          ```
+     *          await library_name.character.send_message("Your Message", true, "URL Link (you can empty it if you don't want to send it)")
+     *          ```
      *   
-     * Example (With image URL)  
-     * - Without manual turn: `await library_name.character.send_message("Your Message", false, "URL Link")`  
-     * - With manual turn: `await library_name.character.send_message("Your Message", true, "URL Link")`
+     * - Example (Manual input Character ID and Chat ID)  
+     *      - Wtihout manual turn  
+     *          ```js
+     *          await library_name.character.send_message("Your Message", false, "URL Link (you can empty it if you don't want to send it)", {
+     *              char_id: "Input your Character ID here.",
+     *              chat_id: "Input your Chat ID here."
+     *          })
+     *          ```  
+     *      - With manual turn  
+     *          ```js
+     *          await library_name.character.send_message("Your Message", true, "URL Link (you can empty it if you don't want to send it)", {
+     *              char_id: "Input your Character ID here.",
+     *              chat_id: "Input your Chat ID here."
+     *          })
+     *          ```
      * 
-     * @param {string | null} message
-     * @param {boolean} manual_turn
-     * @param {string | null} image_url_path
+     * @param {string | undefined} message
+     * @param {boolean | undefined} manual_turn
+     * @param {string | undefined} image_url_path
+     * @param {{char_id: string, chat_id: string} | undefined} manual_opt
      * @returns {Promise<SingleCharacterChatInfo>}
     */
-    async send_message(message, manual_turn = false, image_url_path = "") {
+    async send_message(message = "", manual_turn = false, image_url_path = "", manual_opt = {
+        char_id: this.#prop.current_char_id_chat,
+        chat_id: this.#prop.current_chat_id
+    }) {
         if (!this.#prop.token) throw "Please login first."
-        if (!this.#prop.join_type || this.#prop.join_type != 1) throw "This function only works when you're connected on Single Character Chat."
+        
+        if (!manual_opt.char_id) {
+            if (this.#prop.current_char_id_chat) manual_opt.char_id = this.#prop.current_char_id_chat
+            else throw "Character ID cannot be empty! please input Character ID correctly, or connect to the character by using character.connect() function."
+        }
+        if (!manual_opt.chat_id) {
+            if (this.#prop.current_chat_id) manual_opt.chat_id = this.#prop.current_chat_id
+            else throw "Chat ID cannot be empty! please input Chat ID correctly, or connect to the character by using character.connect() function."
+        }
 
         const turn_key = this.#prop.join_type ? generateRandomUUID() : ""
 
@@ -1133,12 +1214,12 @@ class Character_Class {
                 "num_candidates": 1,
                 "tts_enabled": this.#prop.is_connected_livekit_room ? true : false,
                 "selected_language": "",
-                "character_id": this.#prop.current_char_id_chat,
+                "character_id": manual_opt.char_id,
                 "user_name": this.#prop.user_data.user.user.username,
                 "turn": {
                     "turn_key": {
                         "turn_id": turn_key,
-                        "chat_id": this.#prop.current_chat_id
+                        "chat_id": manual_opt.chat_id
                     },
                     "author": {
                         "author_id": `${this.#prop.user_data.user.user.id}`,
@@ -1186,10 +1267,14 @@ class Character_Class {
      *   
      * Example: `await library_name.character.generate_turn()`
      * 
+     * @param {{char_id: string, chat_id: string} | undefined} manual_opt
      * @returns {Promise<SingleCharacterChatInfo>}
     */
-    async generate_turn() {
-        return await this.send_message()
+    async generate_turn(manual_opt = {
+        char_id: this.#prop.current_char_id_chat,
+        chat_id: this.#prop.current_chat_id
+    }) {
+        return await this.send_message("", "", "", manual_opt);
     }
 
     /**
@@ -1198,11 +1283,23 @@ class Character_Class {
      * Example: `await library_name.character.generate_turn_candidate("Turn ID")`
      * 
      * @param {string} turn_id
+     * @param {{char_id: string, chat_id: string} | undefined} manual_opt
      * @returns {Promise<SingleCharacterChatInfo>}
     */
-    async generate_turn_candidate(turn_id) {
+    async generate_turn_candidate(turn_id, manual_opt = {
+        char_id: this.#prop.current_char_id_chat,
+        chat_id: this.#prop.current_chat_id
+    }) {
         if (!this.#prop.token) throw "Please login first."
-        if (!this.#prop.join_type || this.#prop.join_type != 1) throw "This function only works when you're connected on Single Character Chat."
+        
+        if (!manual_opt.char_id) {
+            if (this.#prop.current_char_id_chat) manual_opt.char_id = this.#prop.current_char_id_chat
+            else throw "Character ID cannot be empty! please input Character ID correctly, or connect to the character by using character.connect() function."
+        }
+        if (!manual_opt.chat_id) {
+            if (this.#prop.current_chat_id) manual_opt.chat_id = this.#prop.current_chat_id
+            else throw "Chat ID cannot be empty! please input Chat ID correctly, or connect to the character by using character.connect() function."
+        }
         
         return await send_ws(this.#prop.ws[1], JSON.stringify({
             "command": "generate_turn_candidate",
@@ -1210,11 +1307,11 @@ class Character_Class {
             "payload": {
                 "tts_enabled": this.#prop.is_connected_livekit_room ? true : false,
                 "selected_language": "",
-                "character_id": this.#prop.current_char_id_chat,
+                "character_id": manual_opt.char_id,
                 "user_name": this.#prop.user_data.user.user.username,
                 "turn_key": {
                     "turn_id": turn_id,
-                    "chat_id": this.#prop.current_chat_id
+                    "chat_id": manual_opt.chat_id
                 },
                 "previous_annotations": {
                     "boring": 0,
@@ -1253,30 +1350,37 @@ class Character_Class {
      * - Without greeting: `await library_name.character.create_new_conversation(false)`
      * 
      * @param {boolean} with_greeting
+     * @param {{char_id: string} | undefined} manual_opt
      * @returns {Promise<SingleCharacterChatInfo>}
     */
-    async create_new_conversation(with_greeting = true) {
+    async create_new_conversation(with_greeting = true, manual_opt = {
+        char_id: this.#prop.current_char_id_chat
+    }) {
         if (!this.#prop.token) throw "Please login first."
-        if (!this.#prop.join_type || this.#prop.join_type != 1) throw "This function only works when you're connected on Single Character Chat."
+
+        if (!manual_opt.char_id) {
+            if (this.#prop.current_char_id_chat) manual_opt.char_id = this.#prop.current_char_id_chat
+            else throw "Character ID cannot be empty! please input Character ID correctly, or connect to the character by using character.connect() function."
+        }
         
         const result = await send_ws(this.#prop.ws[1], JSON.stringify({
             "command": "create_chat",
-            "request_id": generateRandomUUID().slice(0, -12) + this.#prop.current_char_id_chat.slice(this.#prop.current_char_id_chat.length - 12),
+            "request_id": generateRandomUUID().slice(0, -12) + manual_opt.char_id.slice(manual_opt.char_id.length - 12),
             "payload": {
                 "chat": {
                     "chat_id": generateRandomUUID(),
                     "creator_id": `${this.#prop.user_data.user.user.id}`,
                     "visibility": "VISIBILITY_PRIVATE",
-                    "character_id": this.#prop.current_char_id_chat,
+                    "character_id": manual_opt.char_id,
                     "type": "TYPE_ONE_ON_ONE"
                 },
                 "with_greeting": with_greeting
             },
             "origin_id": "Android"
-        }), true, 1, false, true)
+        }), true, with_greeting, false, with_greeting)
 
-        this.#prop.current_chat_id = result[0].chat.chat_id
-        return result[1]
+        if (this.#prop.join_type == 1) this.#prop.current_chat_id = result.chat.chat_id
+        return result
     }
 
     /**
@@ -1285,17 +1389,29 @@ class Character_Class {
      * Example: `await library_name.character.delete_message("Turn ID")`
      * 
      * @param {string} turn_id
+     * @param {{char_id: string, chat_id: string} | undefined} manual_opt
      * @returns {Promise<boolean>}
     */
-    async delete_message(turn_id) {
+    async delete_message(turn_id, manual_opt = {
+        chat_id: this.#prop.current_chat_id,
+        char_id: this.#prop.current_char_id_chat
+    }) {
         if (!this.#prop.token) throw "Please login first."
-        if (!this.#prop.join_type || this.#prop.join_type != 1) throw "This function only works when you're connected on Single Character Chat."
-        
+
+        if (!manual_opt.char_id) {
+            if (this.#prop.current_char_id_chat) manual_opt.char_id = this.#prop.current_char_id_chat
+            else throw "Character ID cannot be empty! please input Character ID correctly, or connect to the character by using character.connect() function."
+        }
+        if (!manual_opt.chat_id) {
+            if (this.#prop.current_chat_id) manual_opt.chat_id = this.#prop.current_chat_id
+            else throw "Chat ID cannot be empty! please input Chat ID correctly, or connect to the character by using character.connect() function."
+        }
+
         await send_ws(this.#prop.ws[1], JSON.stringify({
             "command": "remove_turns",
-            "request_id": generateRandomUUID().slice(0, -12) + this.#prop.current_char_id_chat.slice(this.#prop.current_char_id_chat.length - 12),
+            "request_id": generateRandomUUID().slice(0, -12) + manual_opt.char_id.slice(manual_opt.char_id.length - 12),
             "payload": {
-                "chat_id": this.#prop.current_chat_id,
+                "chat_id": manual_opt.chat_id,
                 "turn_ids": Array.isArray(turn_id) ? turn_id : [turn_id]
             },
             "origin_id": "Android"
@@ -1311,18 +1427,30 @@ class Character_Class {
      * @param {string} candidate_id
      * @param {string} turn_id
      * @param {string} new_message
+     * @param {{char_id: string, chat_id: string} | undefined} manual_opt
      * @returns {Promise<SingleCharacterChatInfo>}
     */
-    async edit_message(candidate_id, turn_id, new_message) {
+    async edit_message(candidate_id, turn_id, new_message, manual_opt = {
+        chat_id: this.#prop.current_chat_id,
+        char_id: this.#prop.current_char_id_chat
+    }) {
         if (!this.#prop.token) throw "Please login first."
-        if (!this.#prop.join_type || this.#prop.join_type != 1) throw "This function only works when you're connected on Single Character Chat."
-        
+
+        if (!manual_opt.char_id) {
+            if (this.#prop.current_char_id_chat) manual_opt.char_id = this.#prop.current_char_id_chat
+            else throw "Character ID cannot be empty! please input Character ID correctly, or connect to the character by using character.connect() function."
+        }
+        if (!manual_opt.chat_id) {
+            if (this.#prop.current_chat_id) manual_opt.chat_id = this.#prop.current_chat_id
+            else throw "Chat ID cannot be empty! please input Chat ID correctly, or connect to the character by using character.connect() function."
+        }
+
         const result = await send_ws(this.#prop.ws[1], JSON.stringify({
             "command": "edit_turn_candidate",
-            "request_id": generateRandomUUID().slice(0, -12) + this.#prop.current_char_id_chat.slice(this.#prop.current_char_id_chat.length - 12),
+            "request_id": generateRandomUUID().slice(0, -12) + manual_opt.char_id.slice(manual_opt.char_id.length - 12),
             "payload": {
                 "turn_key": {
-                    "chat_id": this.#prop.current_chat_id,
+                    "chat_id": manual_opt.chat_id,
                     "turn_id": turn_id
                 },
                 "current_candidate_id": candidate_id,
@@ -1337,7 +1465,7 @@ class Character_Class {
                 "payload": {
                     "candidate_id": candidate_id,
                     "turn_key": {
-                        "chat_id": this.#prop.current_chat_id,
+                        "chat_id": manual_opt.chat_id,
                         "turn_id": turn_id
                     }
                 },
@@ -1358,20 +1486,27 @@ class Character_Class {
      * @param {string} candidate_id
      * @param {string} voice_id_or_query
      * @param {boolean} using_voice_query
-     * 
+     * @param {{chat_id: string} | undefined} manual_opt
      * @returns {Promise<{replayUrl: string}>}
     */
-    async replay_tts(turn_id, candidate_id, voice_id_or_query = "", using_voice_query = false) {
+    async replay_tts(turn_id, candidate_id, voice_id_or_query = "", using_voice_query = false, manual_opt = {
+        chat_id: this.#prop.current_chat_id
+    }) {
         if (!this.#prop.token) throw "Please login first."
-        if (!this.#prop.join_type || this.#prop.join_type != 1) throw "This function only works when you're connected on Single Character Chat."
+
         if (!turn_id && !candidate_id) throw "Please fill Turn ID and Candidate ID."
         if (!voice_id_or_query) throw "Please fill Voice query or Voice ID."
+
+        if (!manual_opt.chat_id) {
+            if (this.#prop.current_chat_id) manual_opt.chat_id = this.#prop.current_chat_id
+            else throw "Chat ID cannot be empty! please input Chat ID correctly, or connect to the character by using character.connect() function."
+        }
 
         return await (await https_fetch("https://neo.character.ai/multimodal/api/v1/memo/replay", "POST", {
             "Authorization": `Token ${this.#prop.token}`,
             "Content-Type": "application/json"
         }, JSON.stringify({
-            "roomId": this.#prop.current_chat_id,
+            "roomId": manual_opt.chat_id,
             "turnId": turn_id,
             "candidateId": candidate_id,
             ...(using_voice_query ? {
@@ -1391,7 +1526,7 @@ class Character_Class {
      * - Auto (you must already connected with character): `await library_name.character.current_voice()`  
      * - Manual: `await library_name.character.current_voice("Character ID")`
      * 
-     * @param {string | null} character_id  
+     * @param {string | undefined} character_id  
      * @returns {Promise<{character_external_id: string, voice_id: string}>}
     */
     async current_voice(character_id = "") {
@@ -1774,7 +1909,7 @@ class GroupChat_Class {
      * - With Image: `await library_name.group_chat.send_message("Your Message", "URL Image")`
      * 
      * @param {string} message
-     * @param {string | null} image_url_path
+     * @param {string | undefined} image_url_path
      * @returns {Promise<GroupChatInfo>}
     */
     async send_message(message, image_url_path = "") {
@@ -2148,8 +2283,8 @@ class Chat_Class {
      * - Already connected to the Group/Single chat: `await library_name.chat.history_chat_turns("", "fill your next_token here")`  
      * - Manual: `await library_name.chat.history_chat_turns("Chat ID", "fill your next_token here")`
      * 
-     * @param {string | null} chat_id
-     * @param {string | null} next_token
+     * @param {string | undefined} chat_id
+     * @param {string | undefined} next_token
      * @returns {Promise<HistoryChatTurnsInfo>}
     */
     async history_chat_turns(chat_id = "", next_token = "") {
@@ -2443,7 +2578,7 @@ class Voice_Class {
      * - Get your own created voice list: `await library_name.voice.user_list()`
      * - Get user created voice list: `await library_name.voice.user_list("username")`
      * 
-     * @param {string | null} username
+     * @param {string | undefined} username
      * @returns {Promise<{ voices: VoiceInfo[] }>}
     */
     user_created_list(username = "") {
@@ -2801,9 +2936,9 @@ class CAINode extends EventEmitter {
      * - With callback: `console.log(await library_name.generate_token("your@email.com", 30, funtion() {console.log("Please check your email")}, function() {console.log("timeout!")}))`
      * 
      * @param {string} email
-     * @param {Function | null} mail_sent_cb
+     * @param {Function | undefined} mail_sent_cb
      * @param {number} timeout_per_2s
-     * @param {Function | null} timeout_cb
+     * @param {Function | undefined} timeout_cb
      * @returns {Promise<string>}
     */
     generate_token(email, timeout_per_2s = 30, mail_sent_cb = null, timeout_cb = null) {
