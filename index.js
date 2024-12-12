@@ -74,9 +74,9 @@ function send_ws(ws_con, data, using_json, wait_json_prop_type, wait_ai_response
             if (using_json && wait_json_prop_type) {
                 try {
                     if (wait_ai_response) {
-                        switch(wait_json_prop_type) {
+                        switch(Number(wait_json_prop_type)) {
                             case 1: { // single character chat
-                                if (!message.turn.author.is_human && message.turn.candidates[0].is_final) {
+                                if ((!message.turn.author.is_human && message.turn.candidates[0].is_final)) {
                                     ws_con.removeListener("message", incoming);
                                     resolve(message)
                                 }
@@ -91,10 +91,11 @@ function send_ws(ws_con, data, using_json, wait_json_prop_type, wait_ai_response
                             }
                         }
                     } else {
-                        switch(wait_json_prop_type) {
+                        switch(Number(wait_json_prop_type)) {
                             case 1: { // single character chat
                                 if (message.turn.candidates[0].is_final) {
                                     ws_con.removeListener("message", incoming);
+                                    
                                     if (append_array) resolve(temp_res.concat(message));
                                     else resolve(message);
                                 }
