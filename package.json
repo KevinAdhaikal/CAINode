@@ -1,6 +1,6 @@
 {
     "name": "cainode",
-    "version": "1.1.8",
+    "version": "1.1.9",
     "description": "A lightweight unofficial Character.AI API using Node JS",
     "main": "index.js",
     "type": "module",
