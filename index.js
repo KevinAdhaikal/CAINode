@@ -1380,7 +1380,7 @@ class Character_Class {
             "origin_id": "Android"
         }), true, with_greeting, false, with_greeting)
 
-        if (this.#prop.join_type == 1) this.#prop.current_chat_id = result.chat.chat_id
+        if (this.#prop.join_type == 1) this.#prop.current_chat_id = result[0].chat.chat_id
         return result
     }
 
