@@ -1,7 +1,6 @@
 import WebSocket from "ws";
 import EventEmitter from "node:events";
-const livekit = await import("@livekit/rtc-node").catch(_ => {_});
-let fetch;
+const textDecoder = new TextDecoder()
 
 async function load() {
     if (typeof process !== "undefined" && process.versions && process.versions.node && Number(process.version.substring(1, 3)) < 18) {
@@ -60,16 +59,17 @@ function open_ws(url, cookie, userid, this_class) {
         })
         ws_con.on('message', function(message) {
             message = message.toString()
-            if (message === "{}") ws_con.send("{}")
+            if (message === "{}") ws_con.send("{}") // Ping
             else this_class.emit("message", message)
         });
     });
 }
 
-function send_ws(ws_con, data, using_json, wait_json_prop_type, wait_ai_response, append_array = false) {
-    return new Promise(resolve => {
+function send_ws(ws_con, data, using_json, wait_json_prop_type, wait_ai_response, append_array = false, timeout_ms = 0) {
+    return new Promise((resolve, reject) => {
         const temp_res = []
-        ws_con.on("message", function incoming(message) {
+        let inc, timeout;
+        ws_con.on("message", inc = function incoming(message) {
             message = using_json ? JSON.parse(message.toString()) : message.toString()
             if (using_json && wait_json_prop_type) {
                 try {
@@ -77,6 +77,7 @@ function send_ws(ws_con, data, using_json, wait_json_prop_type, wait_ai_response
                         switch(Number(wait_json_prop_type)) {
                             case 1: { // single character chat
                                 if ((!message.turn.author.is_human && message.turn.candidates[0].is_final)) {
+                                    if (timeout_ms != 0) clearTimeout(timeout);
                                     ws_con.removeListener("message", incoming);
                                     resolve(message)
                                 }
@@ -84,6 +85,7 @@ function send_ws(ws_con, data, using_json, wait_json_prop_type, wait_ai_response
                             }
                             case 2: { // group chat
                                 if (!message["push"].pub.data.turn.author.is_human && message["push"].pub.data.turn.candidates[0].is_final) {
+                                    if (timeout_ms != 0) clearTimeout(timeout);
                                     ws_con.removeListener("message", incoming);
                                     resolve(message)
                                 }
@@ -94,8 +96,8 @@ function send_ws(ws_con, data, using_json, wait_json_prop_type, wait_ai_response
                         switch(Number(wait_json_prop_type)) {
                             case 1: { // single character chat
                                 if (message.turn.candidates[0].is_final) {
+                                    if (timeout_ms != 0) clearTimeout(timeout);
                                     ws_con.removeListener("message", incoming);
-                                    
                                     if (append_array) resolve(temp_res.concat(message));
                                     else resolve(message);
                                 }
@@ -103,6 +105,7 @@ function send_ws(ws_con, data, using_json, wait_json_prop_type, wait_ai_response
                             }
                             case 2: { // group chat
                                 if (message["push"].pub.data.turn.candidates[0].is_final) {
+                                    if (timeout_ms != 0) clearTimeout(timeout);
                                     ws_con.removeListener("message", incoming);
                                     if (append_array) resolve(temp_res.concat(message));
                                     else resolve(message);
@@ -115,11 +118,16 @@ function send_ws(ws_con, data, using_json, wait_json_prop_type, wait_ai_response
                     if (append_array) temp_res.push(message);
                 }
             } else {
+                if (timeout_ms != 0) clearTimeout(timeout);
                 ws_con.removeListener("message", incoming);
                 resolve(message)
             }
         })
         ws_con.send(data)
+        if (timeout_ms != 0) timeout = setTimeout(() => {
+            ws_con.removeListener("message", inc);
+            reject("Timeout exceeded!")
+        }, timeout_ms)
     })
 }
 
@@ -131,26 +139,24 @@ class CAINode_prop {
     current_char_id_chat = "";
     edge_rollout = "";
     join_type = 0;
-    livekit_room = "";
-    is_connected_livekit_room = 0;
+    is_connected_livekit_room = [0];
 }
 
 /**
- * @typedef {object} StatusInfo
+ * @typedef {Object} StatusInfo
  * @property {string} status
  * @property {string} comment
 */
 
-// User Class
 class User_Class {
     /**
-     * @typedef {object} UserInfo
-     * @property {object} user
-     * @property {object} user.user
+     * @typedef {Object} UserInfo
+     * @property {Object} user
+     * @property {Object} user.user
      * @property {string} user.user.username
      * @property {number} user.user.id
      * @property {string} user.user.first_name
-     * @property {object} user.user.account
+     * @property {Object} user.user.account
      * @property {string} user.user.account.name
      * @property {string} user.user.account.avatar_type
      * @property {string} user.user.account.onboarding_complete
@@ -166,20 +172,20 @@ class User_Class {
      * @property {string[]} user.hidden_characters
      * @property {string[]} user.blocked_users
      * @property {string} user.bio
-     * @property {object} user.interests
+     * @property {Object} user.interests
      * @property {string[]} user.interests.selected
     */
 
     /**
-     * @typedef {object} UserSettings
+     * @typedef {Object} UserSettings
      * @property {string | undefined} default_persona_id
      * @property {Record<string, string> | undefined} voiceOverrides
      * @property {Record<string, string> | undefined} personaOverrides
     */
 
     /**
-     * @typedef {object} UserPublicInfo
-     * @property {object} public_user
+     * @typedef {Object} UserPublicInfo
+     * @property {Object} public_user
      * @property {string[]} public_user.characters
      * @property {string} public_user.username
      * @property {string} public_user.name
@@ -192,8 +198,8 @@ class User_Class {
     */
 
     /**
-     * @typedef {object} UserPublicFollowInfo
-     * @property {object} users
+     * @typedef {Object} UserPublicFollowInfo
+     * @property {Object} users
      * @property {string} users[].username
      * @property {string} users[].account__avatar_file_name
      * @property {string} users[].account__bio
@@ -201,8 +207,8 @@ class User_Class {
     */
 
     /**
-     * @typedef {object} UserLikedCharacter
-     * @property {object[]} characters
+     * @typedef {Object} UserLikedCharacter
+     * @property {Object[]} characters
      * @property {string} characters[].external_id
      * @property {string} characters[].title
      * @property {string} characters[].description
@@ -217,6 +223,35 @@ class User_Class {
      * @property {boolean} characters[].img_gen_enabled
      * @property {number} characters[].participant__num_interactions
      * @property {number} characters[].upvotes
+    */
+
+    /**
+     * @typedef {Object} UserSearch
+     * @property {Object[]} creators
+     * @property {string} creators[].visibility
+     * @property {number} creators[].score
+     * @property {string} creators[].name
+    */
+
+    /**
+     * @typedef {Object} UserPublicInfoArray
+     * @property {Object[]} public_users
+     * @property {string} public_users[].username
+     * @property {string} public_users[].account__avatar_file_name
+     * @property {Object} public_users[].character_info
+     * @property {number} public_users[].character_info.num_characters
+     * @property {number} public_users[].character_info.num_interactions
+     * @property {Object} public_users[].character_info.top_1_char
+     * @property {string} public_users[].character_info.top_1_char.character_name
+     * @property {number} public_users[].character_info.top_1_char.interactions
+     * @property {string} public_users[].character_info.top_1_char.avatar_file_name
+     * @property {string} public_users[].character_info.top_1_char.external_id
+     * @property {Object} public_users[].character_info.top_2_char
+     * @property {string} public_users[].character_info.top_2_char.character_name
+     * @property {number} public_users[].character_info.top_2_char.interactions
+     * @property {string} public_users[].character_info.top_2_char.avatar_file_name
+     * @property {string} public_users[].character_info.top_2_char.external_id
+     * 
     */
 
     #prop;
@@ -248,6 +283,39 @@ class User_Class {
     async public_info(username) {
         if (!this.#prop.token) throw "Please login first."
         return await (await https_fetch("https://plus.character.ai/chat/user/public/", "POST", {"Authorization": `Token ${this.#prop.token}`, "Content-Type": "application/json"}, JSON.stringify({"username": username ? username : this.#prop.user_data.user.user.username}))).json()
+    }
+
+    /**
+     * Search user by name.  
+     *   
+     * Example: `await library_name.user.search("Name user")`
+     * 
+     * @param {string} name
+     * @returns {Promise<UserSearch>}
+    */
+    async search(name) {
+        if (!this.#prop.token) throw "Please login first."
+        if (!name) throw "Parameter named 'name' cannot be empty."
+
+        return await (await https_fetch(`https://neo.character.ai/search/v1/creator?query=${name}`, "GET", {
+            "Authorization": `Token ${this.#prop.token}`
+        })).json();
+    }
+
+    /**
+     * Get user public information account. same like `public_info()`, but this function have less information.  
+     * This function allow to fetch more than one usernames. Using array.  
+     * 
+     * @param {Array | string} usernames
+     * @returns {Promise<UserPublicInfoArray>}
+    */
+    async public_info_array(usernames) {
+        if (!this.#prop.token) throw "Please login first."
+        if (!usernames) throw "Parameter named 'usernames' cannot be empty."
+
+        return await (await https_fetch("https://plus.character.ai/chat/anon/users/public/", "POST", {"Authorization": `Token ${this.#prop.token}`, "Content-Type": "application/json"}, JSON.stringify({
+            "usernames": typeof usernames === "string" ? [usernames] : usernames
+        }))).json();
     }
 
     /**
@@ -442,7 +510,7 @@ class Image_Class {
 // Persona Class
 class Persona_Class {
     /**
-     * @typedef {object} Persona
+     * @typedef {Object} Persona
      * @property {string} external_id
      * @property {string} title
      * @property {string} name
@@ -459,7 +527,8 @@ class Persona_Class {
      * @property {boolean} strip_img_prompt_from_msg
      * @property {string} definition
      * @property {string} default_voice_id
-     * @property {string | undefined} starter_prompts
+     * @property {object | undefined} starter_prompts
+     * @property {string[]} starter_prompts.phrases
      * @property {boolean} comments_enabled
      * @property {string[]} categories
      * @property {string} user__username
@@ -470,7 +539,7 @@ class Persona_Class {
     */
 
     /**
-     * @typedef {object} PersonaList
+     * @typedef {Object} PersonaList
      * @property {string} external_id
      * @property {string} title
      * @property {string} greeting
@@ -683,8 +752,8 @@ class Persona_Class {
 // Explore Class
 class Explore_Class {
     /**
-     * @typedef {object} ExploreCharacter
-     * @property {object[]} characters
+     * @typedef {Object} ExploreCharacter
+     * @property {Object[]} characters
      * @property {string} characters[].external_id
      * @property {string} characters[].name
      * @property {string} characters[].participant__name
@@ -696,20 +765,20 @@ class Explore_Class {
      * @property {string} characters[].avatar_file_name
      * @property {boolean} characters[].img_gen_enabled
      * @property {string} characters[].user__username
-     * @property {object} characters[].translations
-     * @property {object} characters[].translations.name
+     * @property {Object} characters[].translations
+     * @property {Object} characters[].translations.name
      * @property {string} characters[].translations.name.ko
      * @property {string} characters[].translations.name.ru
      * @property {string} characters[].translations.name.ja_JP
      * @property {string} characters[].translations.name.zh_CN
-     * @property {object} characters[].translations.title
+     * @property {Object} characters[].translations.title
      * @property {string} characters[].translations.title.es
      * @property {string} characters[].translations.title.ko
      * @property {string} characters[].translations.title.ru
      * @property {string} characters[].translations.title.ja_JP
      * @property {string} characters[].translations.title.pt_BR
      * @property {string} characters[].translations.title.zh_CN
-     * @property {object} characters[].translations.greeting
+     * @property {Object} characters[].translations.greeting
      * @property {string} characters[].translations.greeting.es
      * @property {string} characters[].translations.greeting.ko
      * @property {string} characters[].translations.greeting.ru
@@ -721,7 +790,7 @@ class Explore_Class {
     */
 
     /**
-     * @typedef {object} CharacterCategoriesInformation
+     * @typedef {Object} CharacterCategoriesInformation
      * @property {string} external_id
      * @property {string} title
      * @property {string} greeting
@@ -868,8 +937,8 @@ class Explore_Class {
 
 class Character_Class {
     /**
-     * @typedef {object} CharactersSearchInfo
-     * @property {object[]} characters
+     * @typedef {Object} CharactersSearchInfo
+     * @property {Object[]} characters
      * @property {string} characters[].document_id
      * @property {string} characters[].external_id
      * @property {string} characters[].title
@@ -885,8 +954,8 @@ class Character_Class {
     */
 
     /**
-     * @typedef {object} CharactersSearchSuggestInfo
-     * @property {object[]} characters
+     * @typedef {Object} CharactersSearchSuggestInfo
+     * @property {Object[]} characters
      * @property {string} characters[].document_id
      * @property {string} characters[].external_id
      * @property {string} characters[].name
@@ -897,8 +966,8 @@ class Character_Class {
     */
 
     /**
-     * @typedef {object} CharacterInformation
-     * @property {object} character
+     * @typedef {Object} CharacterInformation
+     * @property {Object} character
      * @property {string} character.external_id
      * @property {string} character.title
      * @property {string} character.name
@@ -927,8 +996,8 @@ class Character_Class {
     */
 
     /**
-     * @typedef {object} CharacterRecentList
-     * @property {object[]} chats
+     * @typedef {Object} CharacterRecentList
+     * @property {Object[]} chats
      * @property {string} chats.chat_id
      * @property {string} chats.create_time
      * @property {string} chats.creator_id
@@ -939,29 +1008,37 @@ class Character_Class {
      * @property {string} chats.character_name
      * @property {string} chats.character_avatar_uri
      * @property {string} chats.character_visibility
-     * @property {object} chats.character_translations
+     * @property {Object} chats.character_translations
      * @property {string | undefined} chats.default_voice_id
+     * @property {Object} chats.streak
+     * @property {number} chats.streak.user_id
+     * @property {number} chats.streak.character_id
+     * @property {number} chats.streak.streak
+     * @property {string} chats.streak.last_chat_date
+     * @property {string} chats.streak.last_chat_timestamp
+     * @property {string} chats.streak.updated_at
+     * @property {string} chats.streak.updated_date
     */
 
     /**
-     * @typedef {object} SingleCharacterChatInfo
-     * @property {object} turn
-     * @property {object} turn.turn_key
+     * @typedef {Object} SingleCharacterChatInfo
+     * @property {Object} turn
+     * @property {Object} turn.turn_key
      * @property {string} turn.turn_key.chat_id
      * @property {string} turn.turn_key.turn_id
      * @property {string} turn.create_time
      * @property {string} turn.last_update_time
      * @property {string} turn.state
-     * @property {object} turn.author
+     * @property {Object} turn.author
      * @property {string} turn.author.author_id
      * @property {string} turn.author.name
      * @property {boolean} turn.author.is_human
-     * @property {object[]} turn.candidates
+     * @property {Object[]} turn.candidates
      * @property {string} turn.candidates[].candidate_id
      * @property {string} turn.candidates[].create_time
      * @property {string} turn.candidates[].raw_content
      * @property {string} turn.candidates[].tti_image_rel_path
-     * @property {object} turn.candidates[].editor
+     * @property {Object} turn.candidates[].editor
      * @property {string} turn.candidates[].editor.author_id
      * @property {string} turn.candidates[].editor.name
      * @property {boolean} turn.candidates[].is_final
@@ -1053,18 +1130,18 @@ class Character_Class {
     /**
      * Get detailed information about characters.  
      *   
-     * Example: `await library_name.character.info("Character External ID")`
+     * Example: `await library_name.character.info("Character ID")`
      * 
-     * @param {string} char_extern_id
+     * @param {string} char_id
      * @returns {Promise<CharacterInformation>}
     */
-    async info(char_extern_id) {
+    async info(char_id) {
         if (!this.#prop.token) throw "Please login first."
         return await (await https_fetch("https://plus.character.ai/chat/character/info/", "POST", {
             'Authorization': `Token ${this.#prop.token}`,
             "Content-Type": "application/json"
         }, JSON.stringify({
-            "external_id": char_extern_id
+            "external_id": char_id
         }))).json()
     }
 
@@ -1148,11 +1225,6 @@ class Character_Class {
         this.#prop.current_char_id_chat = "";
         this.#prop.join_type = 0;
 
-        if (this.#prop.is_connected_livekit_room) {
-            await this.#prop.livekit_room.disconnect()
-            await livekit.dispose()
-        }
-
         return true;
     }
 
@@ -1175,6 +1247,7 @@ class Character_Class {
      *          await library_name.character.send_message("Your Message", false, "URL Link (you can empty it if you don't want to send it)", {
      *              char_id: "Input your Character ID here.",
      *              chat_id: "Input your Chat ID here."
+     *              timeout_ms: 0 // if you wanna using timeout. (default 0: no timeout)
      *          })
      *          ```  
      *      - With manual turn  
@@ -1182,21 +1255,30 @@ class Character_Class {
      *          await library_name.character.send_message("Your Message", true, "URL Link (you can empty it if you don't want to send it)", {
      *              char_id: "Input your Character ID here.",
      *              chat_id: "Input your Chat ID here."
+     *              timeout_ms: 0 // if you wanna using timeout. (default 0: no timeout)
      *          })
      *          ```
      * 
      * @param {string | undefined} message
      * @param {boolean | undefined} manual_turn
      * @param {string | undefined} image_url_path
-     * @param {{char_id: string, chat_id: string} | undefined} manual_opt
+     * @param {{char_id: string, chat_id: string, timeout_ms: number} | undefined} manual_opt
      * @returns {Promise<SingleCharacterChatInfo>}
     */
     async send_message(message = "", manual_turn = false, image_url_path = "", manual_opt = {
         char_id: this.#prop.current_char_id_chat,
-        chat_id: this.#prop.current_chat_id
+        chat_id: this.#prop.current_chat_id,
+        timeout_ms: 0
     }) {
         if (!this.#prop.token) throw "Please login first."
-        
+
+        if (typeof manual_opt != "object") {
+            manual_opt = {
+                char_id: this.#prop.current_char_id_chat,
+                chat_id: this.#prop.current_chat_id,
+                timeout_ms: 0
+            }
+        }
         if (!manual_opt.char_id) {
             if (this.#prop.current_char_id_chat) manual_opt.char_id = this.#prop.current_char_id_chat
             else throw "Character ID cannot be empty! please input Character ID correctly, or connect to the character by using character.connect() function."
@@ -1205,6 +1287,8 @@ class Character_Class {
             if (this.#prop.current_chat_id) manual_opt.chat_id = this.#prop.current_chat_id
             else throw "Chat ID cannot be empty! please input Chat ID correctly, or connect to the character by using character.connect() function."
         }
+        if (typeof manual_opt.timeout_ms != "number") throw "Timeout input must be number."
+        if (manual_opt.timeout_ms < 0) manual_opt.timeout_ms = 0;
 
         const turn_key = this.#prop.join_type ? generateRandomUUID() : ""
 
@@ -1213,7 +1297,7 @@ class Character_Class {
             "request_id": generateRandomUUID().slice(0, -12) + this.#prop.current_char_id_chat.slice(this.#prop.current_char_id_chat.length - 12),
             "payload": {
                 "num_candidates": 1,
-                "tts_enabled": this.#prop.is_connected_livekit_room ? true : false,
+                "tts_enabled": true,
                 "selected_language": "",
                 "character_id": manual_opt.char_id,
                 "user_name": this.#prop.user_data.user.user.username,
@@ -1260,7 +1344,7 @@ class Character_Class {
                 }
             },
             "origin_id": "Android"
-        }), true, Number(!manual_turn), !manual_turn)
+        }), true, Number(!manual_turn), !manual_turn, false, manual_opt.timeout_ms)
     }
 
     /**
@@ -1268,12 +1352,13 @@ class Character_Class {
      *   
      * Example: `await library_name.character.generate_turn()`
      * 
-     * @param {{char_id: string, chat_id: string} | undefined} manual_opt
+     * @param {{char_id: string, chat_id: string, timeout_ms: number} | undefined} manual_opt
      * @returns {Promise<SingleCharacterChatInfo>}
     */
     async generate_turn(manual_opt = {
         char_id: this.#prop.current_char_id_chat,
-        chat_id: this.#prop.current_chat_id
+        chat_id: this.#prop.current_chat_id,
+        timeout_ms: 0
     }) {
         return await this.send_message("", "", "", manual_opt);
     }
@@ -1289,10 +1374,18 @@ class Character_Class {
     */
     async generate_turn_candidate(turn_id, manual_opt = {
         char_id: this.#prop.current_char_id_chat,
-        chat_id: this.#prop.current_chat_id
+        chat_id: this.#prop.current_chat_id,
+        timeout_ms: 0
     }) {
         if (!this.#prop.token) throw "Please login first."
         
+        if (typeof manual_opt != "object") {
+            manual_opt = {
+                char_id: this.#prop.current_char_id_chat,
+                chat_id: this.#prop.current_chat_id,
+                timeout_ms: 0
+            }
+        }
         if (!manual_opt.char_id) {
             if (this.#prop.current_char_id_chat) manual_opt.char_id = this.#prop.current_char_id_chat
             else throw "Character ID cannot be empty! please input Character ID correctly, or connect to the character by using character.connect() function."
@@ -1301,12 +1394,14 @@ class Character_Class {
             if (this.#prop.current_chat_id) manual_opt.chat_id = this.#prop.current_chat_id
             else throw "Chat ID cannot be empty! please input Chat ID correctly, or connect to the character by using character.connect() function."
         }
+        if (typeof manual_opt.timeout_ms != "number") throw "Timeout input must be number."
+        if (manual_opt.timeout_ms < 0) manual_opt.timeout_ms = 0;
         
         return await send_ws(this.#prop.ws[1], JSON.stringify({
             "command": "generate_turn_candidate",
             "request_id": generateRandomUUID().slice(0, -12) + this.#prop.current_char_id_chat.slice(this.#prop.current_char_id_chat.length - 12),
             "payload": {
-                "tts_enabled": this.#prop.is_connected_livekit_room ? true : false,
+                "tts_enabled": this.#prop.is_connected_livekit_room[0] ? true : false,
                 "selected_language": "",
                 "character_id": manual_opt.char_id,
                 "user_name": this.#prop.user_data.user.user.username,
@@ -1537,33 +1632,141 @@ class Character_Class {
             "Authorization": `Token ${this.#prop.token}`
         })).json()
     }
+    
+    /**
+     * Get category used of the character.  
+     *   
+     * Example: `await library_name.character.get_category("Character ID")`
+     * 
+     * @param {string} character_id
+     * @returns {Promise<{categories: []}>}
+    */
+    async get_category(character_id) {
+        if (!this.#prop.token) throw "Please login first."
+        if (!character_id) throw "Please input Character ID."
+
+        return await (await https_fetch(`https://neo.character.ai/character/v1/categories/${character_id}`, "GET", {
+            "Authorization": `Token ${this.#prop.token}`
+        })).json()
+    }
+
+    /**
+     * Get detailed information of the character about.  
+     * REMEMBER: Specific Character only. if the character have an "about" feature, then you can use this function.  
+     * Otherwise, it return noindex: true, or it means it empty.
+     *   
+     * Example: `await library_name.character.about("Short Hash of the character")`
+     * 
+     * @param {string} short_hash
+     * @returns {Promise<{
+     * about_character: {
+     *     external_id: string,
+     *     is_person_name: string,
+     *     language: string,
+     *     description: string,
+     *     expertise: string,
+     *     personality_question: string,
+     *     personality_question_answer: string,
+     *     slug: string,
+     *     icebreakers: []
+     *     noindex: boolean
+     * }
+     * }>}
+     */
+    async about(short_hash) {
+        if (!this.#prop.token) throw "Please login first."
+        if (!short_hash) throw "Please input Character ID."
+
+        return await (await https_fetch(`https://neo.character.ai/character/v1/character/about/${short_hash}`, "GET", {
+            "Authorization": `Token ${this.#prop.token}`
+        })).json()
+    }
+
+    /**
+     * Get detailed of the character. but, it will give you a FULL detailed of the Character, including character definition.  
+     * REMMEBER: If the character defined turned to public, then you can use this function.  
+     * Otherwise, it return an empty character data and the status says "do not have permission to view this Character".  
+     * 
+     * @param {string} char_id
+     * @returns {Promise<{
+     *      character: {
+     *          id: number,
+     *          external_id: string,
+     *          name: string,
+     *          participant__id: string,
+     *          participant__name: string,
+     *          participant__num_interactions: number,
+     *          title: string,
+     *          description: string,
+     *          definition: string,
+     *          sanitized_definition: string,
+     *          greeting: string,
+     *          user_id: number,
+     *          voice_id: string | null,
+     *          visibility: string,
+     *          safety: string,
+     *          archived: any | null,
+     *          avatar_file_name: string,
+     *          img_gen_enabled: boolean,
+     *          base_img_prompt: string,
+     *          img_gen_guidance_scale: any | null,
+     *          user__username: string,
+     *          is_persona: boolean,
+     *          translations: {},
+     *          default_voice_id: string,
+     *          short_hash: string,
+     *          identifier: string,
+     *          img_prompt_regex: string,
+     *          strip_img_prompt_from_msg: boolean,
+     *          copyable: boolean,
+     *          starter_prompts: {phrases: []} | null,
+     *          comments_enabled: boolean,
+     *          updated: string,
+     *          categories: [{
+     *              name: string,
+     *              priority: number,
+     *              description: string,
+     *          }]
+     *      }
+     *      status: string | undefined
+     * }>}
+    */
+    async info_detailed(char_id) {
+        if (!this.#prop.token) throw "Please login first."
+        return await (await https_fetch("https://plus.character.ai/chat/character/", "POST", {
+            "Authorization": `Token ${this.#prop.token}`,
+            "Content-Type": "application/json"
+        }, JSON.stringify({
+            "external_id": char_id
+        }))).json()
+    }
 }
 
 class GroupChat_Class {
     /**
-     * @typedef {object} GroupChatListInfo
-     * @property {object[]} rooms
+     * @typedef {Object} GroupChatListInfo
+     * @property {Object[]} rooms
      * @property {string} rooms[].id
      * @property {string} rooms[].title
      * @property {string} rooms[].description
      * @property {string} rooms[].visibility
      * @property {string} rooms[].picture
-     * @property {object[]} rooms[].characters
+     * @property {Object[]} rooms[].characters
      * @property {string} rooms[].characters[].id
      * @property {string} rooms[].characters[].name
      * @property {string} rooms[].characters[].url
-     * @property {object[]} rooms[].users
+     * @property {Object[]} rooms[].users
      * @property {string} rooms[].users[].id
      * @property {string} rooms[].users[].username
      * @property {string} rooms[].users[].avatar_url
      * @property {string} rooms[].users[].role
      * @property {string} rooms[].users[].state
      * @property {[]} rooms[].permissions
-     * @property {object} rooms[].preview_turns
+     * @property {Object} rooms[].preview_turns
      * @property {[]} rooms[].preview_turns.turns
-     * @property {object} rooms[].preview_turns.meta
+     * @property {Object} rooms[].preview_turns.meta
      * @property {string} rooms[].preview_turns.meta.next_token
-     * @property {object} rooms[].settings
+     * @property {Object} rooms[].settings
      * @property {boolean} rooms[].settings.anyone_can_join
      * @property {boolean} rooms[].settings.require_approval
      * @property {boolean} rooms[].settings.auto_smart_reply
@@ -1575,34 +1778,34 @@ class GroupChat_Class {
     */
 
     /**
-     * @typedef {object} GroupChatConnectInfo
+     * @typedef {Object} GroupChatConnectInfo
      * @property {number} id
      * @property {string} error
-     * @property {object} subscribe
+     * @property {Object} subscribe
      * @property {boolean} subscribe.recoverable
      * @property {string} subscribe.epoch
      * @property {boolean} subscribe.positioned
     */
 
     /**
-     * @typedef {object} GroupChatDisconnectInfo
+     * @typedef {Object} GroupChatDisconnectInfo
      * @property {number} id
-     * @property {object} subscribe
+     * @property {Object} subscribe
     */
 
     /**
-     * @typedef {object} GroupChatCreateInfo
+     * @typedef {Object} GroupChatCreateInfo
      * @property {string} id
      * @property {string} title
      * @property {string} description
      * @property {string} visibility
      * @property {string} picture
      * @property {number} last_updated
-     * @property {object[]} characters
+     * @property {Object[]} characters
      * @property {string} characters[].id
      * @property {string} characters[].name
      * @property {string} characters[].avatar_url
-     * @property {object[]} users
+     * @property {Object[]} users
      * @property {string} users[].id
      * @property {string} users[].username
      * @property {string} users[].name
@@ -1610,30 +1813,30 @@ class GroupChat_Class {
      * @property {string} users[].role
      * @property {string} users[].state
      * @property {[]} permissions
-     * @property {object[]} preview_turns
-     * @property {object} preview_turns[].turns
-     * @property {object} preview_turns[].turns.turn_key
+     * @property {Object[]} preview_turns
+     * @property {Object} preview_turns[].turns
+     * @property {Object} preview_turns[].turns.turn_key
      * @property {string} preview_turns[].turns.turn_key.chat_id
      * @property {string} preview_turns[].turns.turn_key.turn_id
      * @property {string} preview_turns[].turns.create_time
      * @property {string} preview_turns[].turns.last_update_time
      * @property {string} preview_turns[].turns.state
-     * @property {object} preview_turns[].turns.author
+     * @property {Object} preview_turns[].turns.author
      * @property {string} preview_turns[].turns.author.author_id
      * @property {string} preview_turns[].turns.author.name
-     * @property {object[]} preview_turns[].turns.candidates
+     * @property {Object[]} preview_turns[].turns.candidates
      * @property {string} preview_turns[].turns.candidates[].candidate_id
      * @property {string} preview_turns[].turns.candidates[].create_time
      * @property {string} preview_turns[].turns.candidates[].raw_content
-     * @property {object} preview_turns[].turns.candidates[].editor
+     * @property {Object} preview_turns[].turns.candidates[].editor
      * @property {string} preview_turns[].turns.candidates[].editor.author_id
      * @property {string} preview_turns[].turns.candidates[].editor.name
      * @property {boolean} preview_turns[].turns.candidates[].is_final
      * @property {string} preview_turns[].turns.primary_candidate_id
      * @property {string} preview_turns[].turns.primary_candidate_id
-     * @property {object} preview_turns[].meta
+     * @property {Object} preview_turns[].meta
      * @property {string} preview_turns[].meta.next_token
-     * @property {object} settings
+     * @property {Object} settings
      * @property {boolean} settings.anyone_can_join
      * @property {boolean} settings.require_approval
      * @property {boolean} settings.auto_smart_reply
@@ -1645,18 +1848,18 @@ class GroupChat_Class {
     */
 
     /**
-     * @typedef {object} GroupChatDeleteInfo
+     * @typedef {Object} GroupChatDeleteInfo
      * @property {string} id
      * @property {string} command
     */
 
     /**
-     * @typedef {object} GroupChatActivityInfo
+     * @typedef {Object} GroupChatActivityInfo
      * @property {string} id
-     * @property {object} users
+     * @property {Object} users
      * @property {[]} users.added
      * @property {[]} users.removed
-     * @property {object} characters
+     * @property {Object} characters
      * @property {[]} characters.removed
      * @property {[]} characters.removed
      * @property {string} title
@@ -1664,33 +1867,33 @@ class GroupChat_Class {
     */
 
     /**
-     * @typedef {object} GroupChatInfo
-     * @property {object} push
+     * @typedef {Object} GroupChatInfo
+     * @property {Object} push
      * @property {string} push.channel
-     * @property {object} push.pub
-     * @property {object} push.pub.data
-     * @property {object} push.pub.data.turn
-     * @property {object} push.pub.data.turn.turn_key
+     * @property {Object} push.pub
+     * @property {Object} push.pub.data
+     * @property {Object} push.pub.data.turn
+     * @property {Object} push.pub.data.turn.turn_key
      * @property {string} push.pub.data.turn.turn_key.chat_id
      * @property {string} push.pub.data.turn.turn_key.turn_key
      * @property {string} push.pub.data.turn.create_time
      * @property {string} push.pub.data.turn.last_update_time
      * @property {string} push.pub.data.turn.state
-     * @property {object} push.pub.data.turn.author
+     * @property {Object} push.pub.data.turn.author
      * @property {string} push.pub.data.turn.author.author_id
      * @property {string} push.pub.data.turn.author.is_human
      * @property {string} push.pub.data.turn.author.name
-     * @property {object[]} push.pub.data.turn.candidates
+     * @property {Object[]} push.pub.data.turn.candidates
      * @property {string} push.pub.data.turn.candidates[].candidate_id
      * @property {string} push.pub.data.turn.candidates[].create_time
      * @property {string} push.pub.data.turn.candidates[].raw_content
      * @property {string} push.pub.data.turn.candidates[].tti_image_rel_path
      * @property {string} push.pub.data.turn.candidates[].base_candidate_id
-     * @property {object} push.pub.data.turn.candidates[].editor
+     * @property {Object} push.pub.data.turn.candidates[].editor
      * @property {string} push.pub.data.turn.candidates[].editor.author_id
      * @property {boolean} push.pub.data.turn.candidates[].is_final
      * @property {string} push.pub.data.turn.primary_candidate_id
-     * @property {object} push.pub.data.chat_info
+     * @property {Object} push.pub.data.chat_info
      * @property {string} push.pub.data.chat_info.type
      * @property {string} push.pub.data.command
      * @property {string} push.pub.data.request_id
@@ -1911,11 +2114,22 @@ class GroupChat_Class {
      * 
      * @param {string} message
      * @param {string | undefined} image_url_path
+     * @param {number} timeout_ms
      * @returns {Promise<GroupChatInfo>}
     */
-    async send_message(message, image_url_path = "") {
+    async send_message(message, image_url_path = "", timeout_ms = 0) {
         if (!this.#prop.token) throw "Please login first."
         if (!this.#prop.join_type || this.#prop.join_type != 2) throw "This function only works when you're connected on Group Chat."
+
+        if (typeof manual_opt != "object") {
+            manual_opt = {
+                char_id: this.#prop.current_char_id_chat,
+                chat_id: this.#prop.current_chat_id,
+                timeout_ms: 0
+            }
+        }
+
+        if (timeout_ms < 0) timeout_ms = 0;
 
         const turn_key = this.#prop.join_type ? generateRandomUUID() : ""
         return await send_ws(this.#prop.ws[0], JSON.stringify({
@@ -1949,7 +2163,7 @@ class GroupChat_Class {
                 }
             },
             "id": 1
-        }), true, 2, false)
+        }), true, 2, false, null, timeout_ms)
     }
 
     /**
@@ -1957,11 +2171,13 @@ class GroupChat_Class {
      *   
      * Example: `await library_name.group_chat.generate_turn()`
      * 
+     * @param {number} timeout_ms
      * @returns {Promise<GroupChatInfo>}
     */
-    async generate_turn() {
+    async generate_turn(timeout_ms = 0) {
         if (!this.#prop.token) throw "Please login first."
         if (!this.#prop.join_type || this.#prop.join_type != 2) throw "This function only works when you're connected on Group Chat."
+        if (timeout_ms < 0) timeout_ms = 0;
 
         return await send_ws(this.#prop.ws[0], JSON.stringify({
             "rpc": {
@@ -1990,12 +2206,15 @@ class GroupChat_Class {
      * 
      * @param {string} turn_id
      * @param {string} char_id
+     * @param {number} timeout_ms
      * @returns {Promise<GroupChatInfo>}
     */
-    async generate_turn_candidate(turn_id, char_id) {
+    async generate_turn_candidate(turn_id, char_id, timeout_ms = 0) {
         if (!this.#prop.token) throw "Please login first."
         if (!this.#prop.join_type || this.#prop.join_type != 2) throw "This function only works when you're connected on Group Chat."
         
+        if (timeout_ms < 0) timeout_ms = 0;
+
         return await send_ws(this.#prop.ws[0], JSON.stringify({
             "rpc": {
                 "method": "unused_command",
@@ -2140,12 +2359,14 @@ class GroupChat_Class {
      * Example: `await library_name.group_chat.select_turn("Character ID")`
      * 
      * @param {string} char_id
+     * @param {number} timeout_ms
      * @returns {Promise<GroupChatInfo>}
     */
-    async select_turn(char_id) {
+    async select_turn(char_id, timeout_ms = 0) {
         if (!this.#prop.token) throw "Please login first."
         if (!this.#prop.join_type || this.#prop.join_type != 2) throw "This function only works when you're connected on Group Chat."
-
+        if (timeout_ms < 0) timeout_ms = 0;
+        
         return await send_ws(this.#prop.ws[0], JSON.stringify({
             "rpc": {
                 "method": "unused_command",
@@ -2166,31 +2387,31 @@ class GroupChat_Class {
 
 class Chat_Class {
     /**
-     * @typedef {object} HistoryChatTurnsInfo
-     * @property {object[]} turns
-     * @property {object} turns[].turn_key
+     * @typedef {Object} HistoryChatTurnsInfo
+     * @property {Object[]} turns
+     * @property {Object} turns[].turn_key
      * @property {string} turns[].turn_key.chat_id
      * @property {string} turns[].turn_key.turn_id
      * @property {string} turns[].create_time
      * @property {string} turns[].last_update_time
      * @property {string} turns[].state
-     * @property {object} turns[].author
+     * @property {Object} turns[].author
      * @property {string} turns[].author.author_id
      * @property {string} turns[].author.name
      * @property {boolean} turns[].author.is_human
-     * @property {object[]} turns[].candidates
+     * @property {Object[]} turns[].candidates
      * @property {string} turns[].candidates[].candidate_id
      * @property {string} turns[].candidates[].create_time
      * @property {string} turns[].candidates[].raw_content
      * @property {boolean} turns[].candidates[].is_final
      * @property {string} turns[].primary_candidate_id
-     * @property {object} meta
+     * @property {Object} meta
      * @property {string} meta.next_token
     */
 
     /**
-     * @typedef {object} HistoryArchiveConversationInfo
-     * @property {object[]} chats
+     * @typedef {Object} HistoryArchiveConversationInfo
+     * @property {Object[]} chats
      * @property {string} chats[].chat_id
      * @property {string} chats[].create_time
      * @property {string} chats[].creator_id
@@ -2198,65 +2419,66 @@ class Chat_Class {
      * @property {string} chats[].state
      * @property {string} chats[].type
      * @property {string} chats[].visibility
+     * @property {string} chats[].name
     */
 
     /**
-     * @typedef {object} PinMessageInfo
-     * @property {object} turn
-     * @property {object} turn.turn_key
+     * @typedef {Object} PinMessageInfo
+     * @property {Object} turn
+     * @property {Object} turn.turn_key
      * @property {string} turn.turn_key.chat_id
      * @property {string} turn.turn_key.turn_id
      * @property {string} turn.create_time
      * @property {string} turn.last_update_time
      * @property {string} turn.state
-     * @property {object} turn.author
+     * @property {Object} turn.author
      * @property {string} turn.author.author_id
      * @property {string} turn.author.name
      * @property {boolean} turn.author.is_human
-     * @property {object[]} turn.candidates
+     * @property {Object[]} turn.candidates
      * @property {string} turn.candidates[].candidate_id
      * @property {string} turn.candidates[].create_time
      * @property {string} turn.candidates[].raw_content
      * @property {string} turn.candidates[].tti_image_rel_path
-     * @property {object} turn.candidates[].editor
+     * @property {Object} turn.candidates[].editor
      * @property {string} turn.candidates[].editor.author_id
      * @property {string} turn.candidates[].editor.name
      * @property {boolean} turn.candidates[].is_final
      * @property {string} turn.candidates[].base_candidate_id
      * @property {string} turn.primary_candidate_id
      * @property {boolean} turn.is_pinned
-     * @property {object} chat_info
+     * @property {Object} chat_info
      * @property {string} chat_info.type
      * @property {string} command
      * @property {string} request_id
     */
 
     /**
-     * @typedef {object} ListPinnedMessageInfo
-     * @property {object[]} turns
-     * @property {object} turns[].turn_key
+     * @typedef {Object} ListPinnedMessageInfo
+     * @property {Object[]} turns
+     * @property {Object} turns[].turn_key
      * @property {string} turns[].turn_key.chat_id
      * @property {string} turns[].turn_key.turn_id
      * @property {string} turns[].create_time
      * @property {string} turns[].last_update_time
      * @property {string} turns[].state
-     * @property {object} turns[].author
+     * @property {Object} turns[].author
      * @property {string} turns[].author.author_id
      * @property {string} turns[].author.name
-     * @property {object[]} turns[].candidates
+     * @property {Object[]} turns[].candidates
      * @property {string} turns[].candidates[].candidate_id
      * @property {string} turns[].candidates[].create_time
      * @property {string} turns[].candidates[].raw_content
      * @property {boolean} turns[].candidates[].is_final
      * @property {string} turns[].primary_candidate_id
      * @property {boolean} turns[].is_pinned
-     * @property {object} meta
+     * @property {Object} meta
      * @property {string} meta.next_token
     */
 
     /** 
-     * @typedef {object} ConversationInfo
-     * @property {object} chat
+     * @typedef {Object} ConversationInfo
+     * @property {Object} chat
      * @property {string} chat.chat_id
      * @property {string} chat.create_time
      * @property {string} chat.creator_id
@@ -2366,13 +2588,13 @@ class Chat_Class {
      * 
      * @returns {Promise<PinMessageInfo>}
     */
-    async pin_message(turn_id, pinned = true, chat_id) {
+    async pin_message(turn_id, pinned = true, chat_id = this.#prop.current_chat_id) {
         if (!this.#prop.token) throw "Please login first."
         if (!this.#prop.current_chat_id && !chat_id) throw "Please fill the chat_id or you must connected to the single character."
         
         return await send_ws(this.#prop.ws[1], JSON.stringify({
             "command": "set_turn_pin",
-            "request_id": generateRandomUUID().slice(0, -12) + this.#prop.current_char_id_chat.slice(this.#prop.current_char_id_chat.length - 12),
+            "request_id": generateRandomUUID().slice(0, -12) + chat_id.slice(this.#prop.current_char_id_chat.length - 12),
             "payload": {
                 "turn_key": {
                     "chat_id": chat_id ? chat_id : this.#prop.current_chat_id,
@@ -2388,12 +2610,12 @@ class Chat_Class {
      *   
      * Example: `await library_name.chat.list_pinned_message("Chat ID")`
      * 
-     * @param {string} chat_id 
+     * @param {string} chat_id
      * @returns {Promise<ListPinnedMessageInfo>}
     */
     async list_pinned_message(chat_id) {
         if (!this.#prop.token) throw "Please login first."
-        if (!this.#prop.current_chat_id && !chat_id) throw "Please input the Chat ID, or you must connected to the single character chat."
+        if (!this.#prop.current_chat_id || !chat_id) throw "Please input the Chat ID, or you must connected to the single character chat."
 
         return await (await https_fetch(`https://neo.character.ai/turns/${chat_id ? chat_id : this.#prop.current_chat_id}/?pinned_only=true`, "GET", {
             'Authorization': `Token ${this.#prop.token}`
@@ -2460,31 +2682,144 @@ class Chat_Class {
     }
 }
 
-class Livekit_Class {
-    #livekit_audioStream;
-    #livekit_audioSource;
-    #opts;
-    
+class Livekit_Class extends EventEmitter {
     /**
-     * @param {import("@livekit/rtc-node").AudioStream} audioStream
-     * @param {import("@livekit/rtc-node").AudioSource} audioSource
-     * @param {{framerate: number, channel: number}} opts
+     * Livekit variable list (when you're connected to the character voice)
+     * - `is_character_speaking`: Check is Character is speaking or not.  
+     *    
+     * Livekit function list (when you're connected to the character voice)  
+     *   
+     * - `on()` event:  
+     *   - "dataReceived": Receive Character.AI Livekit data events.  
+     *   - "frameReceived": Receive audio stream from Livekit Server.  
+     *   - "disconnected": Notify when the Voice is disconnect.  
+     * - `input_write()`: Send audio PCM raw data to the Livekit Server.  
+     * - `is_speech()`: this function checking is the PCM buffer frame is silence or not.  
+     * - `interrupt_call()`: Interrupt while character talking.  
+     * - `disconnect()`: Disconnect from voice character.
     */
-    constructor(audioStream, audioSource, opts) {
-        if (!livekit) throw "This function only works when you're install livekit library. (npm/bun install @livekit/rtc-node)"
-        this.#livekit_audioStream = audioStream;
-        this.#livekit_audioSource = audioSource;
-        this.#opts = opts;
+
+    /**
+     * @type {{
+     *      cai_token: string
+     *      livekit: import("@livekit/rtc-node"),
+     *      livekit_room: import("@livekit/rtc-node").Room,
+     *      audioSource: import("@livekit/rtc-node").AudioSource,
+     *      audioStream: import("@livekit/rtc-node").AudioStream,
+     *      opts: {chat_id: string, char_id: string, sample_rate: number, channel: number},
+     *      interval_loop: setInterval,
+     *      current_candidate_id: string,
+     *      is_char_speaking: boolean
+     * }}
+    */
+    #livekit_opt = {
+        cai_token: null,
+        livekit: null,
+        livekit_room: null,
+        audioSource: null,
+        audioStream: null,
+        opts: {chat_id: null, char_id: null, sample_rate: 0, channel: 0},
+        interval_loop: null,
+        current_candidate_id: null,
+        is_char_speaking: false
+    }
+
+    /**
+     * @param {string} cai_token
+     * @param {import("@livekit/rtc-node")} lkit
+     * @param {import("@livekit/rtc-node").Room} room
+     * @param {{sample_rate: number, channel: number, chat_id: string, char_id: string}} opts
+     * @param {number} using_mic
+     * @param {any} track
+    */
+    constructor(cai_token, lkit, room, opts, using_mic, track) {
+        super()
+        this.#livekit_opt = {
+            "cai_token": cai_token,
+            "livekit": lkit,
+            "livekit_room": room,
+            "opts": opts,
+            "audioStream": new lkit.AudioStream(track)
+        }
+
+        if (using_mic) {
+            this.#livekit_opt.audioSource = new this.#livekit_opt.livekit.AudioSource(opts.sample_rate, opts.channel);
+            this.#livekit_opt.livekit_room.localParticipant.publishTrack(
+                this.#livekit_opt.livekit.LocalAudioTrack.createAudioTrack('audio', this.#livekit_opt.audioSource),
+                new this.#livekit_opt.livekit.TrackPublishOptions({
+                    source: this.#livekit_opt.livekit.TrackSource.SOURCE_MICROPHONE
+                })
+            );
+        }
+
+        this.#livekit_opt.interval_loop = setInterval(async () => {
+            this.emit("frameReceived", await this.#livekit_opt.audioStream.next())
+        }, 0)
+        room.on("dataReceived", data => {
+            data = JSON.parse(textDecoder.decode(data))
+            switch(data.event) {
+                case "speechStarted": {
+                    this.#livekit_opt.current_candidate_id = data.candidateId
+                    this.#livekit_opt.is_char_speaking = true;
+                    break;
+                }
+                case "speechEnded": {
+                    this.#livekit_opt.current_candidate_id = null;
+                    this.#livekit_opt.is_char_speaking = false;
+                    break;
+                }
+            }
+            this.emit("dataReceived", data);
+        }).on("disconnected", async () => {
+            this.emit("disconnected")
+            await this.disconnect()
+        })
+    }
+
+    /**
+     * @typedef {Object} EventPayloads
+     * @property {{
+     *      callId: string,
+     *      candidateId: string,
+     *      participantId: string,
+     *      event: string,
+     *      timestamp: string,
+     * }} dataReceived
+     * @property {IteratorResult<import("@livekit/rtc-node").AudioFrame, any>} frameReceived
+     * @property {{hello: string}} disconnected
+    */
+
+    /**
+     * Get Character.AI Voices (Livekit) data events.  
+     *   
+     * - `dataReceived`: Receive Character.AI Livekit data events.  
+     * - `frameReceived`: Receive audio stream from Livekit Server.  
+     * - `disconnected`: Notify when the Voice is disconnect.
+     * 
+     * @template {"dataReceived" | "frameReceived" | "disconnected"} T
+     * @param {T} event_name
+     * @param {(args: EventPayloads[T]) => void} listener
+     * @returns {this}
+    */
+    on(event_name, listener) {
+        return super.on(event_name, listener)
+    }
+
+    /**
+     * Check is Character is speaking or not.
+     * @returns {boolean}
+    */
+    get is_character_speaking() {
+        return this.#livekit_opt.is_char_speaking;
     }
 
     /**
      * this function checking is the PCM buffer frame is silence or not.  
-     *   
      * if the PCM Buffer is silence, it will return false. if not, it will return true  
      *   
      * Threshold default: 1000  
-     * 
-     * Credit: https://github.com/ashishbajaj99/mic/blob/master/lib/silenceTransform.js
+     *   
+     * Credit: https://github.com/ashishbajaj99/mic/blob/master/lib/silenceTransform.js  
      * 
      * @param {Buffer} chunk 
      * @param {number} threshold 
@@ -2506,55 +2841,87 @@ class Livekit_Class {
         return true;
     }
 
-
-    /**
-     * Receive audio stream from Livekit Server.  
-     *   
-     * Example  
-     * ```js
-     * let test = await library_name.voice.connect("Sonic The Hedgehog", true);
-     * test.output.on("frameReceived", e => {
-     *      console.log(e.frame.data.buffer); // return PCM data
-     * })
-     * ```
-    */
-    get output() {
-        return this.#livekit_audioStream;
-    }
-
     /**
      * Send audio PCM raw data to the Livekit Server.  
      *   
      * Example  
      * ```js
-     * let test = await library_name.voice.connect("Sonic The Hedgehog", true);
+     * let test = await library_name.voice.connect("Sonic the Hedgehog", true);
      * test.input_write(pcm_data);
      * ```
      * @param {Buffer} pcm_data
      * @returns {Promise<void>}
     */
     async input_write(pcm_data) {
-        pcm_data = new Int16Array(pcm_data.buffer, pcm_data.byteOffset, pcm_data.length / 2);
-        await this.#livekit_audioSource.captureFrame(
-            new livekit.AudioFrame(
-                pcm_data,
-                this.#opts.framerate,
-                this.#opts.channel,
-                pcm_data.length
+        if (this.#livekit_opt.audioSource) {
+            pcm_data = new Int16Array(pcm_data.buffer, pcm_data.byteOffset, pcm_data.length / 2);
+            await this.#livekit_opt.audioSource.captureFrame(
+                new this.#livekit_opt.livekit.AudioFrame(
+                    pcm_data,
+                    this.#livekit_opt.opts.sample_rate,
+                    this.#livekit_opt.opts.channel,
+                    pcm_data.length
+                )
             )
-        )
+        }
+    }
+
+    /**
+     * Interrupt while character talking.  
+     *   
+     * Example  
+     * ```js
+     * let test = await library_name.voice.connect("Sonic the Hedgehog", true);
+     * await test.interrupt_call()
+     * ```
+     * @returns {Promise<object>}
+    */
+    async interrupt_call() {
+        if (!this.#livekit_opt.current_candidate_id) return "Character is still not talking."
+        const result = await https_fetch("https://neo.character.ai/multimodal/api/v1/sessions/discardCandidate", "POST", {
+            "Authorization": `Token ${this.#livekit_opt.cai_token}`,
+            "Content-Type": "application/json"
+        }, JSON.stringify({
+            "roomId": this.#livekit_opt.opts.chat_id,
+            "characterId": this.#livekit_opt.opts.char_id,
+            "candidateId": this.#livekit_opt.current_candidate_id
+        }))
+        this.#livekit_opt.current_candidate_id = null;
+        return result;
+    }
+
+    /**
+     * Disconnect from voice character.  
+     *   
+     * Example  
+     * ```js
+     * let test = await library_name.voice.connect("Sonic the Hedgehog", true);
+     * await test.disconnect()
+     * ```
+     * @returns {Promise<void>}
+    */
+    async disconnect() {
+        clearInterval(this.#livekit_opt.interval_loop)
+        this.#livekit_opt.audioStream.close()
+        await this.#livekit_opt.livekit_room.disconnect();
+        await this.#livekit_opt.livekit.dispose();
+
+        this.removeAllListeners();
+        delete this.#livekit_opt.livekit;
+        delete this.#livekit_opt.livekit_room;
+        this.#livekit_opt = null
     }
 }
 
 class Voice_Class {
     /**
-     * @typedef {object} VoiceInfo
+     * @typedef {Object} VoiceInfo
      * @property {string} id
      * @property {string} name
      * @property {string} description
      * @property {string} gender
      * @property {string} visibility
-     * @property {object} creatorInfo
+     * @property {Object} creatorInfo
      * @property {string} creatorInfo.id
      * @property {string} creatorInfo.source
      * @property {string} creatorInfo.username
@@ -2629,7 +2996,7 @@ class Voice_Class {
      *   
      * Example function  
      * - Using Query: `await library_name.voice.connect("Query", true)`  
-     * - Using Voice ID: `await library_name.voice.connec("Voice ID")`
+     * - Using Voice ID: `await library_name.voice.connect("Voice ID")`
      * 
      * Example to use  
      * - Without microphone
@@ -2642,14 +3009,13 @@ class Voice_Class {
      *      });
      *      
      *      library_name.character.connect("Character ID");
-     *      let test = await library_name.voice.connect("Sonic The Hedgehog", true);
+     *      let test = await library_name.voice.connect("Sonic the Hedgehog", true);
      * 
      *      console.log("Character voice ready!");
      * 
-     *      test.output.on("frameReceived", ev => {
-     *           speaker.write(Buffer.from(ev.frame.data.buffer)); // PCM buffer write into speaker and you'll hear the sound.
+     *      test.on("frameReceived", ev => {
+     *           speaker.write(Buffer.from(ev.value.data.buffer)); // PCM buffer write into speaker and you'll hear the sound.
      *      });
-     * 
      *      library_name.character.generate_turn(); // Test is voice character is working or not.
      *      ```
      *   
@@ -2667,7 +3033,7 @@ class Voice_Class {
      *      
      *      const recordMic = spawn('sox', [
      *           '-q',
-     *           '-t', 'waveaudio', '-d', // Input windows audio (add '-d' if you want set default)
+     *           '-t', 'waveaudio', '-d', // Windows Audio Input (change parameter 3 to '-d' if you want set to default Device ID.)
      *           '-r', '48000',           // Sample rate: 48 kHz
      *           '-e', 'signed-integer',  // Encoding: signed PCM
      *           '-b', '16',              // Bit depth: 16-bit
@@ -2676,31 +3042,79 @@ class Voice_Class {
      *           '-'                      // stdout
      *      ]);
      *      
-     *      let test = await library_name.voice.connect("Sonic The Hedgehog", true, true);
+     *      let test = await library_name.voice.connect("Sonic the Hedgehog", true, true);
      * 
      *      console.log("Voice call ready!");
      *  
-     *      test.output.on("frameReceived", ev => {
-     *           speaker.write(Buffer.from(ev.frame.data.buffer)); // PCM buffer write into speaker and you'll hear the sound.
+     *      test.on("frameReceived", ev => {
+     *           speaker.write(Buffer.from(ev.value.data.buffer)); // PCM buffer write into speaker and you'll hear the sound.
      *      });
      *      
-     *      recordMic.stdout.on("data", data => {
+     *      recordMic.on("data", data => {
      *           if (test.is_speech(data)) test.input_write(data); // Mic PCM Buffer output send it to Livekit server.
      *      });
      *      ```
+     *   
+     * Livekit variable list (when you're connected to the character voice)  
+     * - `is_character_speaking`: Check is Character is speaking or not.  
+     *    
+     *   
+     * Livekit function list (when you're connected to the character voice)  
+     *   
+     * - `on()` event:  
+     *   - "dataReceived": Receive Character.AI Livekit data events.  
+     *   - "frameReceived": Receive audio stream from Livekit Server.  
+     *   - "disconnected": Notify when the Voice is disconnect.  
+     * - `input_write()`: Send audio PCM raw data to the Livekit Server.  
+     * - `is_speech()`: this function checking is the PCM buffer frame is silence or not.  
+     * - `interrupt_call()`: Interrupt while character talking.  
+     * - `disconnect()`: Disconnect from voice character.
      * 
      * @param {string} voice_query_or_id
      * @param {boolean} using_voice_query
      * @param {boolean} using_mic
-     * @param {{framerate: number, channel: number}} mic_opt
+     * @param {{sample_rate: number, channel: number}} mic_opt
+     * @param {{char_id: string, chat_id: string}} manual_opt
      * @returns {Promise<Livekit_Class>}
     */
-    connect(voice_query_or_id, using_voice_query = false, using_mic = false, mic_opt = {"framerate": 48000, "channel": 1}) {
+    async connect(voice_query_or_id, using_voice_query = false, using_mic = false, mic_opt = {"sample_rate": 48000, "channel": 1}, manual_opt = {
+        char_id: this.#prop.current_char_id_chat,
+        chat_id: this.#prop.current_chat_id,
+    }) {
         if (!this.#prop.token) throw "Please login first."
-        if (!this.#prop.join_type || this.#prop.join_type != 1) throw "This function only works when you're connected on Single Character Chat."
-        if (!livekit) throw "This function only works when you're install livekit library. (npm/bun install @livekit/rtc-node)"
-        if (this.#prop.is_connected_livekit_room) throw "You're already connected to Livekit room!"
+
+        if (this.#prop.is_connected_livekit_room[0]) throw "You're already connected to Livekit room!"
+
+        if (typeof mic_opt != "object") {
+            mic_opt = {
+                sample_rate: 48000,
+                channel: 1
+            }
+        }
+
+        if (typeof manual_opt != "object") {
+            manual_opt = {
+                char_id: this.#prop.current_char_id_chat,
+                chat_id: this.#prop.current_chat_id
+            }
+        }
+
+        if (!mic_opt.sample_rate) mic_opt.sample_rate = 48000
+        if (!mic_opt.channel) mic_opt.channel = 1
+
+        if (!manual_opt.char_id) {
+            if (this.#prop.current_char_id_chat) manual_opt.char_id = this.#prop.current_char_id_chat
+            else throw "Character ID cannot be empty! please input Character ID correctly, or connect to the character by using character.connect() function."
+        }
+        if (!manual_opt.chat_id) {
+            if (this.#prop.current_chat_id) manual_opt.chat_id = this.#prop.current_chat_id
+            else throw "Chat ID cannot be empty! please input Chat ID correctly, or connect to the character by using character.connect() function."
+        }
+
         return new Promise(async resolve => {
+            const livekit = await import("@livekit/rtc-node").catch(_ => {
+                throw "This function only works when you're install livekit library. (npm/bun install @livekit/rtc-node)"
+            });
             const connect_result = await (await https_fetch("https://neo.character.ai/multimodal/api/v1/sessions/joinOrCreateSession", "POST", {
                 "Authorization": `Token ${this.#prop.token}`,
                 "Content-Type": "application/json"
@@ -2725,52 +3139,39 @@ class Voice_Class {
                 if (connect_result.message.includes("error reading voice")) throw "Error: Voice ID not found! Please input a correct Voice ID."
                 else throw `Error: ${connect_result.message}`
             }
-            
-            this.#prop.livekit_room = new livekit.Room()
-            await this.#prop.livekit_room.connect(connect_result.lkUrl, connect_result.lkToken, {
+
+            const livekit_room = new livekit.Room();
+
+            livekit_room.once("trackSubscribed", track => {
+                if (track.kind == 1) {
+                    /**
+                     * Livekit variable list (when you're connected to the character voice)
+                        * - `is_character_speaking`: Check is Character is speaking or not.  
+                        *    
+                        * Livekit function list (when you're connected to the character voice)  
+                        *   
+                        * - `on()` event:  
+                        *   - "dataReceived": Receive Character.AI Livekit data events.  
+                        *   - "frameReceived": Receive audio stream from Livekit Server.  
+                        *   - "disconnected": Notify when the Voice is disconnect.  
+                        * - `input_write()`: Send audio PCM raw data to the Livekit Server.  
+                        * - `is_speech()`: this function checking is the PCM buffer frame is silence or not.  
+                        * - `interrupt_call()`: Interrupt while character talking.  
+                        * - `disconnect()`: Disconnect from voice character.
+                    */
+                    resolve(new Livekit_Class(this.#prop.token, livekit, livekit_room, {
+                        sample_rate: mic_opt.sample_rate ? mic_opt.sample_rate : 48000,
+                        channel: mic_opt.channel ? mic_opt.channel : 1,
+                        char_id: manual_opt.char_id,
+                        chat_id: manual_opt.chat_id
+                    }, using_mic, track));
+                }
+            });
+            await livekit_room.connect(connect_result.lkUrl, connect_result.lkToken, {
                 autoSubscribe: true,
                 dynacast: true
             })
-            
-            this.#prop.livekit_room.once("trackSubscribed", (track) => {
-                if (track.kind == 1) {
-                    this.#prop.is_connected_livekit_room = 1;
-                    if (using_mic) {
-                        mic_opt = {
-                            framerate: mic_opt.framerate ? mic_opt.framerate : 48000,
-                            channel: mic_opt.channel ? mic_opt.channel : 1
-                        }
-                        const audio_s = new livekit.AudioSource(mic_opt.framerate, mic_opt.channel);
-                        this.#prop.livekit_room.localParticipant.publishTrack(
-                            livekit.LocalAudioTrack.createAudioTrack('audio', audio_s),
-                            new livekit.TrackPublishOptions({
-                                source: livekit.TrackSource.SOURCE_MICROPHONE
-                            })
-                        );
-                        resolve(new Livekit_Class(new livekit.AudioStream(track), audio_s, mic_opt))
-                    } else resolve(new Livekit_Class(new livekit.AudioStream(track)))
-                }
-            });
         })
-    }
-
-    /**
-     * Warning: This feature only supports Single character chat, not Group chat.  
-     *   
-     * Disconnect from voice character chat.  
-     *   
-     * Example: `await library_name.voice.disconnect()`
-     * @returns {Promise<void>}
-    */
-    async disconnect() {
-        if (!this.#prop.token) throw "Please login first."
-        if (!this.#prop.join_type || this.#prop.join_type != 1) throw "This function only works when you're connected on Single Character Chat."
-        if (!livekit) throw "This function only works when you're install livekit library. (npm/bun install @livekit/rtc-node)"
-        if (!this.#prop.is_connected_livekit_room) throw "You're already disconnected to Livekit room!"
-
-        await this.#prop.livekit_room.disconnect()
-        await livekit.dispose();
-        this.#prop.is_connected_livekit_room = 0;
     }
 }
 
@@ -2791,7 +3192,11 @@ class CAINode extends EventEmitter {
      * - `following_list_name()`: Get account following name list.  
      * - `followers_list_name()`: Get account followers name list.  
      * - `follow()`: Follow user account.  
-     * - `unfollow()`: Unfollow user account.
+     * - `unfollow()`: Unfollow user account.  
+     * - `public_info()`: Get user public information account.  
+     * - `public_info_array()`: Get user public information account. same like `public_info()`, but this function have less information.  
+     * - `liked_character_list()`: Get account liked character list.  
+     * - `search()`: Search user by name.
     */
     user = new User_Class(this.#prop) // User Class
     
@@ -2821,7 +3226,9 @@ class CAINode extends EventEmitter {
      *   
      * - `featured()`: Get the list of characters displayed by the Character.AI server.  
      * - `for_you()`: Get a list of characters recommended by the Character.AI server.  
-     * - `character_categories()`: Get the list of characters from the character category exploration.
+     * - `character_categories()`: Get the list of characters from the character category exploration.  
+     * - `featured_voices()`: Get a list of featured voices.  
+     * - `simillar_char()`: Get a list of simillar character from ID character.
     */
     explore = new Explore_Class(this.#prop); // Explore Class
 
@@ -2844,7 +3251,9 @@ class CAINode extends EventEmitter {
      * - `delete_message()`: Delete character message.  
      * - `edit_message()`: Edit the character message.  
      * - `replay_tts()`: Generate text messages from character to voice audio.  
-     * - `current_voice()`: Get character current voice info.
+     * - `current_voice()`: Get character current voice info.  
+     * - `about()`: Get detailed information of the character about.  
+     * - `info_detailed()`: Get detailed of the character. but, it will give you a FULL detailed of the Character, including character definition.
     */
     character = new Character_Class(this.#prop); // Character Class
 
@@ -2892,9 +3301,34 @@ class CAINode extends EventEmitter {
      * - `info()`: Get voice information.  
      * - `search()`: Search for a voice by name.  
      * - `connect()`: Connect to voice character chat.  
-     * - `disconnect()`: Disconnect from voice character chat.  
+     *   
+     * Livekit variable list (when you're connected to the character voice)
+     * - `is_character_speaking`: Check is Character is speaking or not.  
+     *    
+     * Livekit function list (when you're connected to the character voice)  
+     *   
+     * - `on()` event:  
+     *   - "dataReceived": Receive Character.AI Livekit data events.  
+     *   - "frameReceived": Receive audio stream from Livekit Server.  
+     *   - "disconnected": Notify when the Voice is disconnect.  
+     * - `input_write()`: Send audio PCM raw data to the Livekit Server.  
+     * - `is_speech()`: this function checking is the PCM buffer frame is silence or not.  
+     * - `interrupt_call()`: Interrupt while character talking.  
+     * - `disconnect()`: Disconnect from voice character.
     */
     voice = new Voice_Class(this.#prop); // Voice Class
+
+    /**
+     * Get Character.AI message events.
+     * 
+     * @template {"data"} T
+     * @param {T} event_name
+     * @param {(args: string) => void} listener
+     * @returns {this}
+    */
+    on(event_name, listener) {
+        return super.on(event_name, listener)
+    }
 
     /**
      * Start client initialization with login.  
@@ -2934,11 +3368,11 @@ class CAINode extends EventEmitter {
      * Example  
      * - Without Timer: `console.log(await library_name.generate_token("your@email.com", 0))`  
      * - With Timer: `console.log(await library_name.generate_token("your@email.com", 60))`
-     * - With callback: `console.log(await library_name.generate_token("your@email.com", 30, funtion() {console.log("Please check your email")}, function() {console.log("timeout!")}))`
+     * - With callback: `console.log(await library_name.generate_token("your@email.com", 30, function() {console.log("Please check your email")}, function() {console.log("timeout!")}))`
      * 
      * @param {string} email
-     * @param {Function | undefined} mail_sent_cb
      * @param {number} timeout_per_2s
+     * @param {Function | undefined} mail_sent_cb
      * @param {Function | undefined} timeout_cb
      * @returns {Promise<string>}
     */
@@ -3003,7 +3437,7 @@ class CAINode extends EventEmitter {
         this.#prop.token = ""
         this.#prop.user_data = {}
 
-        this.removeAllListeners("message")
+        this.removeAllListeners()
         return true;
     }
 }
