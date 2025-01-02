@@ -16,8 +16,8 @@ CAINode is now using ESM. Please read at [Getting Started](#getting-started) fir
 
 # Table of contents
 - [Getting Started](#getting-started)
-   - [Install](#install)
-   - [Example Usage](#example-usage)
+   - [Install](#install) - How to Install CAINode Library.
+   - [Example Usage](#example-usage) - Example Usage to using CAINode Library.
 - [Main Function List](#main-function-list)
    - [login](#login) - Start client initialization with login.
    - [generate_token](#generate_token) - Generate your Character.AI Token by sending link verification to an email.
