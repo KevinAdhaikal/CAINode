@@ -19,86 +19,100 @@ CAINode is now using ESM. Please read at [Getting Started](#getting-started) fir
    - [Install](#install)
    - [Example Usage](#example-usage)
 - [Main Function List](#main-function-list)
-   - [login](#login)
-   - [generate_token](#generate_token)
-   - [logout](#logout)
+   - [login](#login) - Start client initialization with login.
+   - [generate_token](#generate_token) - Generate your Character.AI Token by sending link verification to an email.
+   - [logout](#logout) - Logout from the Character.AI.
 - [User Function List](#user-function-list)
-   - [user.info](#userinfo)
-   - [user.change_info](#userchange_info)
-   - [user.settings](#usersettings)
-   - [user.public_following_list](#userpublic_following_list)
-   - [user.public_followers_list](#userpublic_followers_list)
-   - [user.following_list_name](#userfollowing_list_name)
-   - [user.followers_list_name](#userfollowers_list_name)
-   - [user.follow](#userfollow)
-   - [user.unfollow](#userunfollow)
+   - [user.info](#userinfo) - Get current information account.
+   - [user.change_info](#userchange_info) - Change current information account.
+   - [user.settings](#usersettings) - Get current settings information account.
+   - [user.public_info](#userpublic_info) - Get user public information account.
+   - [user.public_info_array](#userpublic_info_array) - Get user public information account. same like `public_info()`, but this function have less information.
+   - [user.public_following_list](#userpublic_following_list) - Get public user following list.
+   - [user.public_followers_list](#userpublic_followers_list) - Get public user followers list.
+   - [user.following_list_name](#userfollowing_list_name) - Get account following name list.
+   - [user.followers_list_name](#userfollowers_list_name) - Get account followers name list.
+   - [user.follow](#userfollow) - Follow user account.
+   - [user.unfollow](#userunfollow) - Unfollow user account.
+   - [user.search](#usersearch) - Search user by name.
+   - [user.liked_character_list](#userliked_character_list) - Get a list of characters that the account likes.
 - [Image Function List](#image-function-list)
-   - [image.generate_avatar](#imagegenerate_avatar)
-   - [image.generate_image](#imagegenerate_image)
+   - [image.generate_avatar](#imagegenerate_avatar) - Generate avatar image using prompt.
+   - [image.generate_image](#imagegenerate_image) - Generate image using prompt.
 - [Persona Function List](#persona-function-list)
-   - [persona.create](#personacreate)
-   - [persona.set_default](#personaset_default)
-   - [persona.list](#personalist)
-   - [persona.info](#personainfo)
-   - [persona.update](#personaupdate)
-   - [persona.delete](#personadelete)
-   - [persona.set_character](#personaset_character)
+   - [persona.create](#personacreate) - Create your personality for your character.
+   - [persona.set_default](#personaset_default) - Set your default personality specifically.
+   - [persona.list](#personalist) - Get all your personality data.
+   - [persona.info](#personainfo) - Get your personality information.
+   - [persona.update](#personaupdate) - Update your personality specifically.
+   - [persona.delete](#personadelete) - Delete your personality spesifically.
+   - [persona.set_character](#personaset_character) - Set a custom personality for your character specifically.
 - [Explore Function List](#explore-function-list)
-   - [explore.featured](#explorefeatured)
-   - [explore.for_you](#explorefor_you)
-   - [explore.simillar_char](#exploresimillar_char)
-   - [explore.character_categories](#explorecharacter_categories)
+   - [explore.featured](#explorefeatured) - Get a list of characters displayed by the Character.AI server.
+   - [explore.for_you](#explorefor_you) - Get a list of characters recommended by the Character.AI server.
+   - [explore.simillar_char](#exploresimillar_char) - Get a list of simillar character from ID character.
+   - [explore.character_categories](#explorecharacter_categories) - Get a list of characters from the character category exploration.
+   - [explore.featured_voices](#explorefeatured_voices) - Get a list of featured voices.
 - [Character Function list](#character-function-list)
-   - [character.votes](#charactervotes)
-   - [character.votes_array](#charactervotes_array)
-   - [character.vote](#charactervote)
-   - [character.search](#charactersearch)
-   - [character.search_suggest](#charactersearch_suggest)
-   - [character.info](#characterinfo)
-   - [character.recent_list](#characterrecent_list)
-   - [character.connect](#characterconnect)
-   - [character.disconnect](#characterdisconnect)
-   - [character.send_message](#charactersend_message)
-   - [character.generate_turn](#charactergenerate_turn)
-   - [character.generate_turn_candidate](#charactergenerate_turn_candidate)
-   - [character.create_new_conversation](#charactercreate_new_conversation)
-   - [character.delete_message](#characterdelete_message)
-   - [character.edit_message](#characteredit_message)
-   - [character.replay_tts](#characterreplay_tts)
-   - [character.current_voice](#charactercurrent_voice)
+   - [character.votes](#charactervotes) - Get character vote information.
+   - [character.votes_array](#charactervotes_array) - Get character vote information in array.
+   - [character.vote](#charactervote) - Used for vote the character.
+   - [character.search](#charactersearch) - Search for a character by name.
+   - [character.search_suggest](#charactersearch_suggest) - Search character by name and suggested by Character.AI Server.
+   - [character.info](#characterinfo) - Get detailed information about characters.
+   - [character.recent_list](#characterrecent_list) - Get a list of recent chat activity.
+   - [character.connect](#characterconnect) - Connect client to character chat.
+   - [character.disconnect](#characterdisconnect) - Disconnecting client from character chat.
+   - [character.send_message](#charactersend_message) - Send message to character.
+   - [character.generate_turn](#charactergenerate_turn) - Generating message response from character.
+   - [character.generate_turn_candidate](#charactergenerate_turn_candidate) - Regenerate character message.
+   - [character.create_new_conversation](#charactercreate_new_conversation) - it will create a new conversation and your current conversation will save on the history.
+   - [character.delete_message](#characterdelete_message) - Delete character message.
+   - [character.edit_message](#characteredit_message) - Edit the character message.
+   - [character.replay_tts](#characterreplay_tts) - Generate text messages from character to voice audio.
+   - [character.current_voice](#charactercurrent_voice) - Get character current voice info.
+   - [character.get_category](#characterget_category) - Get category used of the character.
+   - [character.about](#characterabout) - Get detailed information of the character about.
+   - [character.info_detailed](#characterinfo_detailed) - Get detailed of the character. but, it will give you a FULL detailed of the Character, including character definition.
 - [Group Chat Function List](#group-chat-function-list)
-   - [group_chat.list](#group_chatlist)
-   - [group_chat.connect](#group_chatconnect)
-   - [group_chat.disconnect](#group_chatdisconnect)
-   - [group_chat.create](#group_chatcreate)
-   - [group_chat.delete](#group_chatdelete)
-   - [group_chat.rename](#group_chatrename)
-   - [group_chat.join_group_invite](#group_chatjoin_group_invite)
-   - [group_chat.char_add](#group_chatchar_add)
-   - [group_chat.char_remove](#group_chatchar_remove)
-   - [group_chat.send_message](#group_chatsend_message)
-   - [group_chat.generate_turn](#group_chatgenerate_turn)
-   - [group_chat.generate_turn_candidate](#group_chatgenerate_turn_candidate)
-   - [group_chat.reset_conversation](#group_chatreset_conversation)
-   - [group_chat.delete_message](#group_chatdelete_message)
-   - [group_chat.edit_message](#group_chatedit_message)
-   - [group_chat.select_turn](#group_chatselect_turn)
+   - [group_chat.list](#group_chatlist) - Get all list available group chat in account.
+   - [group_chat.connect](#group_chatconnect) - Connecting to group chat by the Room ID.
+   - [group_chat.disconnect](#group_chatdisconnect) - Disconnect from group chat.
+   - [group_chat.create](#group_chatcreate) - Create group chat.
+   - [group_chat.delete](#group_chatdelete) - Delete group chat.
+   - [group_chat.rename](#group_chatrename) - Rename group chat.
+   - [group_chat.join_group_invite](#group_chatjoin_group_invite) - Joining group chat using invite code.
+   - [group_chat.char_add](#group_chatchar_add) - Add a character with Character ID to the group chat.
+   - [group_chat.char_remove](#group_chatchar_remove) - Remove a character with Character ID from the group chat.
+   - [group_chat.send_message](#group_chatsend_message) - Send message to group chat.
+   - [group_chat.generate_turn](#group_chatgenerate_turn) - Generating message response character from group chat.
+   - [group_chat.generate_turn_candidate](#group_chatgenerate_turn_candidate) - Regenerate character message.
+   - [group_chat.reset_conversation](#group_chatreset_conversation) - Reset conversation in group chat.
+   - [group_chat.delete_message](#group_chatdelete_message) - Delete user/character message.
+   - [group_chat.edit_message](#group_chatedit_message) - Edit user/character message.
+   - [group_chat.select_turn](#group_chatselect_turn) - Select the turn of character chat by yourself.
 - [Chat Function List](#chat-function-list)
-   - [chat.history_chat_turns](#chathistory_chat_turns)
-   - [chat.conversation_info](#chatconversation_info)
-   - [chat.history_conversation_list](#chathistory_conversation_list)
-   - [chat.set_conversation_chat](#chatset_conversation_chat)
-   - [chat.pin_message](#chatpin_message)
-   - [chat.list_pinned_message](#chatlist_pinned_message)
-   - [chat.archive_conversation](#chatarchive_conversation)
-   - [chat.duplicate_conversation](#chatduplicate_conversation)
-   - [chat.rename_conversation](#chatrename_conversation)
+   - [chat.history_chat_turns](#chathistory_chat_turns) - Get a history chat from group or single chat.
+   - [chat.conversation_info](#chatconversation_info) - Get converastion information.
+   - [chat.history_conversation_list](#chathistory_conversation_list) - Get list of your history conversation from character. This function is for Single character only.
+   - [chat.set_conversation_chat](#chatset_conversation_chat) - Set conversation chat, and bring the history chat into current chat. This function is for Single character only.
+   - [chat.pin_message](#chatpin_message) - Pin message. This function is for Single character only.
+   - [chat.list_pinned_message](#chatlist_pinned_message) - Get list pinned message from chat. This function works only for single character chat.
+   - [chat.archive_conversation](#chatarchive_conversation) - Archive your conversation. This function works only for single character chat.
+   - [chat.duplicate_conversation](#chatduplicate_conversation) - Duplicate your conversation. This function works only for single character chat.
+   - [chat.rename_conversation](#chatrename_conversation) - Rename your conversation title. This function works only for single character chat.
 - [Voice Function List](#voice-function-list)
-   - [voice.user_created_list](#voiceuser_created_list)
-   - [voice.info](#voiceinfo)
-   - [voice.search](#voicesearch)
-   - [voice.connect](#voiceconnect)
-   - [voice.disconnect](#voicedisconnect)
+   - [voice.user_created_list](#voiceuser_created_list) - Get list of user created voice information.
+   - [voice.info](#voiceinfo) - Get a voice information.
+   - [voice.search](#voicesearch) - Search for a voice by name.
+   - [voice.connect](#voiceconnect) - Connect to voice character chat, and this function works only for single character chat.
+- [Livekit Function List](#livekit-function-list) - (when you're connected to the character voice)
+   - [voice.connect().is_character_speaking](#voiceconnectis_character_speaking) - Check is Character is speaking or not.
+   - [voice.connect().on event](#voiceconnecton-event) - List and Description of Livekit onevent.
+   - [voice.connect().input_write](#voiceconnectinput_write) - Send audio PCM raw data to the Livekit Server.
+   - [voice.connect().is_speech](#voiceconnectis_speech) - this function checking is the PCM buffer frame is silence or not.
+   - [voice.connect().interrupt_call](#voiceconnectinterrupt_call) - Interrupt while character talking.
+   - [voice.connect().disconnect](#voiceconnectdisconnect) - Disconnect from voice character.
 - [Issues](#issues)
 
 # Getting Started
@@ -155,7 +169,7 @@ To install CAINode, you can simply do
 
    [Back to the Table of contents](#table-of-contents)
 - ## generate_token()
-   Generate your Character.AI Token by email.
+   Generate your Character.AI Token by sending link verification to an email.
 
    - Without timeout
       ```js
@@ -193,20 +207,22 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |  
    | --- | --- | --- | --- |  
-   | none | `false` | `null` | Used for client logout from character ai. |
+   | none | `false` | `null` | - |
 
    [Back to the Table of contents](#table-of-contents)
 
 # User Function List
-- ## user.info()
+> This class contains variables and methods about the User requirement. For example: Get current information account, Change account, etc about user needs.
+- ## user.info
    Get current information account.
-
+   
+   Example
    ```js
    console.log(client.user.info);
    ```
    | Param | Require | Type | Description |  
    | --- | --- | --- | --- |  
-   | none | `false` | `null` | Get user information account. |
+   | none | `false` | `null` | - |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -223,6 +239,21 @@ To install CAINode, you can simply do
    [Back to the Table of contents](#table-of-contents)
 
 
+- ## user.public_info_array()
+   Get user public information account. same like `public_info()`, but this function have less information.
+
+   This function allow to fetch more than one usernames. Using array.
+
+   ```js
+   await client.user.public_info_array();
+   ```
+   | Param | Require | Type | Description |  
+   | --- | --- | --- | --- |  
+   | usernames | `true` | `Array or string` | Target Character.AI username account. can be single (string) or multiple (array). |
+
+   [Back to the Table of contents](#table-of-contents)
+
+
 - ## user.change_info()
    Change current information account.
 
@@ -233,7 +264,7 @@ To install CAINode, you can simply do
    | --- | --- | --- | --- | 
    | username | `false` | `string` | Change your old username to new username. |
    | name | `false` | `string` | Change your old name to new name. |
-   | avatar_rel_path | `false` | `string` | Change your old avatar_rel_path link to new avatar_rel_path link.<br><br><b>Warning</b>: avatar_rel_path image link <b>must be generated/uploaded</b> to Character.AI server. |
+   | avatar_rel_path | `false` | `string` | Change your old `avatar_rel_path` link to new `avatar_rel_path` link.<br><br><b>Warning</b>: `avatar_rel_path` image link <b>must be generated/uploaded</b> to Character.AI server. |
    | bio | `false` | `string` | Change your old bio to new bio. |
 
    [Back to the Table of contents](#table-of-contents)
@@ -248,7 +279,7 @@ To install CAINode, you can simply do
 
    | Param | Require | Type | Description | 
    | --- | --- | --- | --- | 
-   | none | `false` | `null` | Get user settings information. |
+   | none | `false` | `null` | - |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -289,7 +320,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description | 
    | --- | --- | --- | --- | 
-   | none | `false` | `null` | Get account following name list. |
+   | none | `false` | `null` | - |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -302,7 +333,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description | 
    | --- | --- | --- | --- | 
-   | none | `false` | `null` | Get account followers name list. |
+   | none | `false` | `null` | - |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -330,6 +361,30 @@ To install CAINode, you can simply do
    | username | `true` | `string` | Target Character.AI username account. |
 
    [Back to the Table of contents](#table-of-contents)
+
+- ## user.search()
+   Search user by name.
+
+   ```js
+   await client.user.search();
+   ```
+   | Param | Require | Type | Description | 
+   | --- | --- | --- | --- | 
+   | username | `true` | `string` | Target Character.AI username account. |
+
+   [Back to the Table of contents](#table-of-contents)
+
+- ## user.liked_character_list()
+   Get a list of characters that the account likes.
+
+   ```js
+   await client.user.liked_character_list();
+   ```
+   | Param | Require | Type | Description | 
+   | --- | --- | --- | --- | 
+   | none | `false` | `null` | - |
+
+   [Back to the Table of contents](#table-of-contents)
 # Image Function List
 - ## image.generate_avatar()
    Generate avatar image using prompt.
@@ -339,7 +394,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |  
    | --- | --- | --- | --- |  
-   | prompt_name | `true` | `String` | Prompt used for generating avatar image. |
+   | prompt_name | `true` | `string` | Prompt used for generating avatar image. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -351,11 +406,12 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |  
    | --- | --- | --- | --- |  
-   | prompt_name | `true` | `String` | Prompt used for generating AI image. |
+   | prompt_name | `true` | `string` | Prompt used for generating AI image. |
 
    [Back to the Table of contents](#table-of-contents)
 
 # Persona Function List
+> This class contains variables and methods about the Persona requirement. For example: Create/Edit/Delete Persona, Set persona, Get information about persona.
 - ## persona.create()
    Create your personality for your character.
 
@@ -364,8 +420,8 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description | 
    | --- | --- | --- | --- | 
-   |  name  | `true` | `String` | Your persona name |
-   | description | `true` | `String` | Description of your personality, this section is used to describe yourself so that your AI character knows who you are. |
+   |  name  | `true` | `string` | Your persona name |
+   | description | `true` | `string` | Description of your personality, this section is used to describe yourself so that your AI character knows who you are. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -377,7 +433,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description | 
    | --- | --- | --- | --- | 
-   | external_persona_id | `true` | `String` | External personality id that you have. |
+   | external_persona_id | `true` | `string` | External personality id that you have. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -389,7 +445,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | none | `false` | `null` | Get all your personality data. |
+   | none | `false` | `null` | - |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -402,7 +458,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description | 
    | --- | --- | --- | --- | 
-   | external_persona_id | `true` | `String` | External personality id that you have. |
+   | external_persona_id | `true` | `string` | External personality id that you have. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -415,9 +471,9 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description | 
    | --- | --- | --- | --- | 
-   | external_persona_id | `true` | `String` | External personality id that you have. |
-   | name | `true` | `String` | Your new personality name. |
-   | description | `true` | `String` | Your new personality detail. |
+   | external_persona_id | `true` | `string` | External personality id that you have. |
+   | name | `true` | `string` | Your new personality name. |
+   | description | `true` | `string` | Your new personality detail. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -430,7 +486,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description | 
    | --- | --- | --- | --- | 
-   | external_persona_id | `true` | `String` | External personality id that you have. |
+   | external_persona_id | `true` | `string` | External personality id that you have. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -442,12 +498,13 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | character_id | `true` | `String` | A character id that you want to set a custom personality. |
-   | external_persona_id | `true` | `String` | Your personality id that you use to let AI characters know who you are. |
+   | character_id | `true` | `string` | A character id that you want to set a custom personality. |
+   | external_persona_id | `true` | `string` | Your personality id that you use to let AI characters know who you are. |
 
    [Back to the Table of contents](#table-of-contents)
 
 # Explore Function List
+> This class contains functions about the Explore requirement. Example: Featured Character, For you Recommended Character, and etc about Explore.
 - ## explore.featured()
    Get the list of characters displayed by the character.ai server.
 
@@ -456,7 +513,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | none | `false` | `null` | Get all featured data. |
+   | none | `false` | `null` | - |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -468,7 +525,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | none | `false` | `null` | Get all for you data. |
+   | none | `false` | `null` | - |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -493,11 +550,25 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | none | `false` | `null` | Get all character categories data. |
+   | none | `false` | `null` | - |
+
+   [Back to the Table of contents](#table-of-contents)
+- ## explore.featured_voices()
+   Get a list of featured voices.
+
+   ```js
+   await client.explore.featured_voices();
+   ```
+   
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | none | `false` | `null` | - |
 
    [Back to the Table of contents](#table-of-contents)
 
 # Character Function List
+> This class contains functions about the Character requirement (Single Character, not Group Chat). Example: Sending message to Character, Searching character, botes character, and etc about Character.
+
 - ## character.votes()
    Get character vote information.
 
@@ -506,7 +577,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | character_id | `true` | `String` | The character id you are aiming for. |
+   | character_id | `true` | `string` | The character id you are aiming for. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -519,7 +590,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | character_id | `true` | `String` | The character id you are aiming for. |
+   | character_id | `true` | `string` | The character id you are aiming for. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -532,8 +603,8 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | character_id | `true` | `String` | The character id you are aiming for. |
-   | vote | `true` | `Boolean` | Character vote options, `true = like`, `false = dislike`, and `null = cancel` |
+   | character_id | `true` | `string` | The character id you are aiming for. |
+   | vote | `true` | `boolean` | Character vote options, `true = like`, `false = dislike`, and `null = cancel` |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -546,7 +617,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | name | `true` | `String` | Search queries to find characters. |
+   | name | `true` | `string` | Search queries to find characters. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -559,7 +630,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | name | `true` | `String` | Character name query. |
+   | name | `true` | `string` | Character name query. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -572,7 +643,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | character_id | `true` | `String` | Your character id. |
+   | character_id | `true` | `string` | Your character id. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -585,7 +656,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | none | `false` | `null` | Get recent character chats. |
+   | none | `false` | `null` | - |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -598,7 +669,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | character_id | `true` | `String` | Your character id. |
+   | character_id | `true` | `string` | Your character id. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -611,7 +682,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | none | `false` | `null` | Disconnecting client from character chat. |
+   | none | `false` | `null` | - |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -619,14 +690,37 @@ To install CAINode, you can simply do
 - ## character.send_message()
    Send message to character.
 
-   ```js
-   await client.character.send_message(message, manual_turn, image_url);
-   ```
+   - Example (Default and if you're using `character.connect()` to connect to the Single Character.)  
+      - Without manual turn
+         ```js
+         await library_name.character.send_message("Your Message", false, "URL Link (you can empty it if you don't want to send it)")
+         ```
+      - With manual turn
+         ```js
+         await library_name.character.send_message("Your Message", true, "URL Link (you can empty it if you don't want to send it)")
+         ```
+
+   - Example (Manual input Character ID and Chat ID)
+      - Wtihout manual turn  
+         ```js
+         await library_name.character.send_message("Your Message", false, "URL Link (you can empty it if you don't want to send it)", {
+               char_id: "Input your Character ID here.",
+               chat_id: "Input your Chat ID here."
+            })
+         ```  
+      - With manual turn  
+         ```js
+         await library_name.character.send_message("Your Message", true, "URL Link (you can empty it if you don't want to send it)", {
+            char_id: "Input your Character ID here.",
+            chat_id: "Input your Chat ID here."
+         })
+         ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | message | `true` | `String` | Message content. |
-   | manual_turn | `false` | `Boolean` | If the value of `manual_turn` is set to `true` then the message that the client receives must be generated with `character.generate_turn()` so that the message is obtained by the client. |
-   | image_url | `false` | `String` | The image content that the character will see, must be a url and not a file type or a file with a type other than image. |
+   | message | `true` | `string` | Message content. |
+   | manual_turn | `false` | `boolean` | If the value of `manual_turn` is set to `true` then the message that the client receives must be generated with `character.generate_turn()` so that the message is obtained by the client. |
+   | image_url | `false` | `string` | The image content that the character will see, must be a url and not a file type or a file with a type other than image. |
+   | manual_opt | `false` | `{chat_id: string, char_id: string, timeout_ms: number}` | Manual options. (Must fill if you're not already connected into the Single Character. applies only `char_id` and `chat_id` only.)
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -638,7 +732,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | none | `false` | `null` | Generate message response |
+   | manual_opt | `false` | `{chat_id: string, char_id: string, timeout_ms: number}` | Manual options. (Must fill if you're not already connected into the Single Character. applies only `char_id` and `chat_id` only.)
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -650,8 +744,9 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | turn_id | `true` | `String` | `turn_id` or `message_id` from the character. |
-
+   | turn_id | `true` | `string` | `turn_id` or `message_id` from the character. |
+   | manual_opt | `false` | `{chat_id: string, char_id: string, timeout_ms: number}` | Manual options. (Must fill if you're not already connected into the Single Character. applies only `char_id` and `chat_id` only.)
+   
    [Back to the Table of contents](#table-of-contents)
 
 - ## character.create_new_conversation()
@@ -668,7 +763,8 @@ To install CAINode, you can simply do
 
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | with_greeting | `false` | `Boolean` | The character will send you a greeting when you create a new conversation. (Default = true) |
+   | with_greeting | `false` | `boolean` | The character will send you a greeting when you create a new conversation. (Default = true) |
+   | manual_opt | `false` | `{char_id: string}` | Manual Option. (Must fill if you're not already connected into the Single Character.)
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -680,7 +776,8 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | turn_id | `true` | `String` | `turn_id` or `message_id` from the character. |
+   | turn_id | `true` | `string` | `turn_id` or `message_id` from the character. |
+   | manual_opt | `false` | `{char_id: string, chat_id: string}` | Manual Options (Must fill if you're not already connected into the Single Character.)
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -693,9 +790,10 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | candidate_id | `true` | `String` | 
-   | turn_id | `true` | `String` | `turn_id` or `message_id` from the character. |
-   | new_message | `true` | `String` | New character message |
+   | candidate_id | `true` | `string` | 
+   | turn_id | `true` | `string` | `turn_id` or `message_id` from the character. |
+   | new_message | `true` | `string` | New character message |
+   | manual_opt | `false` | `{char_id: string, chat_id: string}` | Manual Options (Must fill if you're not already connected into the Single Character.)
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -713,10 +811,11 @@ To install CAINode, you can simply do
    
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | turn_id | `true` | `String` | `turn_id` from the character. |
-   | candidate_id | `true` | `String` | `candidate_id` from the character. |
-   | voice_id_or_query | `true` | `String` | Input Voice character ID or you can use Voice Query. |
-   | using_query | `false` | `Boolean` | Using Query (if You're using Voice Query, then set this parameter to `true`.) |
+   | turn_id | `true` | `string` | `turn_id` from the character. |
+   | candidate_id | `true` | `string` | `candidate_id` from the character. |
+   | voice_id_or_query | `true` | `string` | Input Voice character ID or you can use Voice Query. |
+   | using_query | `false` | `boolean` | Using Query (if You're using Voice Query, then set this parameter to `true`.) |
+   | manual_opt | `false` | `{chat_id: string}` | Manual Options (Must fill if you're not already connected into the Single Character.)
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -733,9 +832,53 @@ To install CAINode, you can simply do
       ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | character_id | `true` | `String` | Target of Character ID. |
+   | character_id | `false` | `string` | Target of Character ID. (Must fill if you're not already connected into the Single Character.) |
 
    [Back to the Table of contents](#table-of-contents)
+
+
+- ## character.get_category()
+   Get category used of the character.
+
+      ```js
+      await client.character.get_category()
+      ```
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | character_id | `true` | `string` | Target of Character ID. |
+
+   [Back to the Table of contents](#table-of-contents)
+
+
+- ## character.about()
+   Get detailed information of the character about.  
+   > REMEMBER: Specific Character only. if the character have an "about" feature, then you can use this function.  
+   > Otherwise, it return noindex: true, or it means it empty.
+   
+   ```js
+   await client.character.about()
+   ```
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | short_hash | `true` | `string` | Target of Character short hash. |
+
+   [Back to the Table of contents](#table-of-contents)
+
+
+- ## character.info_detailed()
+   Get detailed of the character. but, it will give you a FULL detailed of the Character, including character definition.  
+   > REMEMBER: If the character defined turned to public, then you can use this function.  
+   > Otherwise, it return an empty character data and the status says "do not have permission to view this Character".
+   
+   ```js
+   await client.character.info_detailed()
+   ```
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | external_id | `true` | `string` | Target of Character ID. |
+
+   [Back to the Table of contents](#table-of-contents)
+
 
 # Group Chat Function List
 - ## group_chat.list()
@@ -746,7 +889,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | none | `false` | `null` | none |
+   | none | `false` | `null` | - |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -759,7 +902,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | room_id | `true` | `String` | Your group chat id. |
+   | room_id | `true` | `string` | Your group chat id. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -772,7 +915,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | room_id | `true` | `String` | Your group chat id. |
+   | room_id | `true` | `string` | Your group chat id. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -785,8 +928,8 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | title_room | `true` | `String` | Your custom title room name. |
-   | character_id | `true` | `String` | Your character id will be added to the group chat. |
+   | title_room | `true` | `string` | Your custom title room name. |
+   | character_id | `true` | `string` | Your character id will be added to the group chat. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -799,7 +942,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | room_id | `true` | `String` | Your group chat id. |
+   | room_id | `true` | `string` | Your group chat id. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -812,8 +955,8 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | new_name | `true` | `String` | New name for your group chat. |
-   | room_id | `true` | `String` | Your group chat id. |
+   | new_name | `true` | `string` | New name for your group chat. |
+   | room_id | `true` | `string` | Your group chat id. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -825,7 +968,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | invite_code | `true` | `String` | The group chat miinvite code. |
+   | invite_code | `true` | `string` | The group chat miinvite code. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -837,7 +980,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | character_id | `true` | `String` | Character id to be added to the group chat. |
+   | character_id | `true` | `string` | Character id to be added to the group chat. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -849,7 +992,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | character_id | `true` | `String` | Character id to be removed from the group chat. |
+   | character_id | `true` | `string` | Character id to be removed from the group chat. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -861,8 +1004,8 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | message | `true` | `String` | Message content. |
-   | image_url | `false` | `String` | The image content that the character will see, must be a url and not a file type or a file with a type other than image. |
+   | message | `true` | `string` | Message content. |
+   | image_url | `false` | `string` | The image content that the character will see, must be a url and not a file type or a file with a type other than image. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -874,7 +1017,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | none | `false` | `null` | Generate message response |
+   | none | `false` | `null` | - |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -886,7 +1029,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | turn_id | `true` | `String` | `turn_id` or `message_id` from the character. |
+   | turn_id | `true` | `string` | `turn_id` or `message_id` from the character. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -898,7 +1041,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | none | `false` | `null` | Reset conversation. |
+   | none | `false` | `null` | - |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -910,7 +1053,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | turn_id | `true` | `String` | `turn_id` or `message_id` from the character. |
+   | turn_id | `true` | `string` | `turn_id` or `message_id` from the character. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -922,9 +1065,9 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | candidate_id | `true` | `String` | 
-   | turn_id | `true` | `String` | `turn_id` or `message_id` from the character. |
-   | new_message | `true` | `String` | New character message |
+   | candidate_id | `true` | `string` | 
+   | turn_id | `true` | `string` | `turn_id` or `message_id` from the character. |
+   | new_message | `true` | `string` | New character message |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -936,7 +1079,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | turn_id | `true` | `String` | `turn_id` or `message_id` from the character. |
+   | turn_id | `true` | `string` | `turn_id` or `message_id` from the character. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -949,7 +1092,7 @@ To install CAINode, you can simply do
    ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | chat_id | `true` | `String` | Group chat or single chat ID. |
+   | chat_id | `true` | `string` | Group chat or single chat ID. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -962,7 +1105,7 @@ To install CAINode, you can simply do
 
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | chat_id | `true` | `String` | Group chat ID or single chat ID. |
+   | chat_id | `true` | `string` | Group chat ID or single chat ID. |
    
    [Back to the Table of contents](#table-of-contents)
 
@@ -980,7 +1123,7 @@ To install CAINode, you can simply do
 
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | character_id | `false` | `String` | Target of Character ID. |
+   | character_id | `false` | `string` | Target of Character ID. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -993,7 +1136,7 @@ To install CAINode, you can simply do
 
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | chat_id | `true` | `String` | single chat ID. |
+   | chat_id | `true` | `string` | single chat ID. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -1011,9 +1154,9 @@ To install CAINode, you can simply do
 
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | turn_id | `true` | `String` | Turn ID Message. |
-   | pinned | `false` | `Boolean` | Set the message pinned or not. (set `true` if you want to pin the message, set `false` if you want to unpin the message.) |
-   | chat_id | `false` | `String` | Chat ID Message. (Set the Chat ID if you not connected to the Single character.) |
+   | turn_id | `true` | `string` | Turn ID Message. |
+   | pinned | `false` | `boolean` | Set the message pinned or not. (set `true` if you want to pin the message, set `false` if you want to unpin the message.) |
+   | chat_id | `false` | `string` | Chat ID Message. (Set the Chat ID if you not connected to the Single character.) |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -1026,7 +1169,7 @@ To install CAINode, you can simply do
 
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | chat_id | `true` | `String` | Chat ID Message. |
+   | chat_id | `true` | `string` | Chat ID Message. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -1044,8 +1187,8 @@ To install CAINode, you can simply do
 
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | chat_id | `true` | `String` | Chat ID message that you want to archive. |
-   | set_archive | `false` | `Boolean` | Set Archive (to archive the Conversation, you can set it to `true`. If you want to unarchive the Converastion, you can set it to `false`.) |
+   | chat_id | `true` | `string` | Chat ID message that you want to archive. |
+   | set_archive | `false` | `boolean` | Set Archive (to archive the Conversation, you can set it to `true`. If you want to unarchive the Converastion, you can set it to `false`.) |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -1058,8 +1201,8 @@ To install CAINode, you can simply do
 
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | chat_id | `true` | `String` | Chat ID message that you want to duplicate. |
-   | turn_id | `true` | `String` | Turn ID message that you want to duplicate. |
+   | chat_id | `true` | `string` | Chat ID message that you want to duplicate. |
+   | turn_id | `true` | `string` | Turn ID message that you want to duplicate. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -1072,8 +1215,8 @@ To install CAINode, you can simply do
 
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | chat_id | `true` | `String` | Chat ID message that you want to rename. |
-   | name | `true` | `String` | Name that you want to rename. |
+   | chat_id | `true` | `string` | Chat ID message that you want to rename. |
+   | name | `true` | `string` | Name that you want to rename. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -1092,7 +1235,7 @@ To install CAINode, you can simply do
 
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | username | `false` | `String` | A username that wants you to check the created voice list. |
+   | username | `false` | `string` | A username that wants you to check the created voice list. |
    
    [Back to the Table of contents](#table-of-contents)
 
@@ -1105,7 +1248,7 @@ To install CAINode, you can simply do
 
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | voice_id | `true` | `String` | A Voice ID that wants you to check the voice information. |
+   | voice_id | `true` | `string` | A Voice ID that wants you to check the voice information. |
    
    [Back to the Table of contents](#table-of-contents)
 
@@ -1138,8 +1281,8 @@ To install CAINode, you can simply do
 
       console.log("Character voice ready!");
 
-      test.output.on("frameReceived", ev => {
-            speaker.write(Buffer.from(ev.frame.data.buffer)); // PCM buffer write into speaker and you'll hear the sound.
+      test.on("frameReceived", ev => {
+            speaker.write(Buffer.from(ev.value.data.buffer)); // PCM buffer write into speaker and you'll hear the sound.
       });
 
       await client.character.generate_turn(); // Test is voice character is working or not.
@@ -1172,8 +1315,8 @@ To install CAINode, you can simply do
 
       console.log("Voice call ready!");
 
-      test.output.on("frameReceived", ev => {
-            speaker.write(Buffer.from(ev.frame.data.buffer)); // PCM buffer write into speaker and you'll hear the sound.
+      test.on("frameReceived", ev => {
+            speaker.write(Buffer.from(ev.value.data.buffer)); // PCM buffer write into speaker and you'll hear the sound.
       });
       
       recordMic.stdout.on("data", data => {
@@ -1182,25 +1325,113 @@ To install CAINode, you can simply do
       ```
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | voice_query_or_id | `true` | `String` | Target Voice query or Voice ID. |
-   | using_voice_query | `false` | `Boolean` | Using Voice Query (set it to true if `voice_query_or_id` using Voice Query) |
-   | using_mic | `false` | `Boolean` | Using Microphone (You can talk to the Character using Microphone. Livekit needed.) |
-   | mic_opt | `false` | `{framerate: number, channel: number}` | Mic options. Default = `{framerate: 48000, channel: 1}` |
+   | voice_query_or_id | `true` | `string` | Target Voice query or Voice ID. |
+   | using_voice_query | `false` | `boolean` | Using Voice Query (set it to true if `voice_query_or_id` using Voice Query) |
+   | using_mic | `false` | `boolean` | Using Microphone (You can talk to the Character using Microphone. Livekit needed.) |
+   | mic_opt | `false` | `{sample_rate: number, channel: number}` | Mic options. Default = `{sample_rate: 48000, channel: 1}` |
+   | manual_opt | `false` | `{char_id: string, chat_id: string}` | Manual Options. (Must fill if you're not connected to the Single Character.) |
 
    [Back to the Table of contents](#table-of-contents)
 
-- ## voice.disconnect()
-   <b>WARNING: This feature only supports Single character chat, not Group chat.</b>
-
-   Disconnect from voice character chat.
+# Livekit Function List
+- ## voice.connect().is_character_speaking
+   Check is Character is speaking or not.
 
    ```js
-   await client.voice.disconnect()
+   const voice = await client.voice.connect();
+   console.log(voice.is_character_speaking)
    ```
 
    | Param | Require | Type | Description |
    | --- | --- | --- | --- | 
-   | none | `false` | `null` | Disconnect from voice character chat. |
+   | none | `false` | `null` | - |
+   [Back to the Table of contents](#table-of-contents)
+
+- ## voice.connect().on event
+   Get Character.AI Voices (Livekit) data events.
+
+   - `dataReceived`: Receive Character.AI Livekit data events.
+      ```js
+      const voice = await client.voice.connect();
+      voice.on("dataReceived", data => {
+         console.log(data)
+      })
+      ```
+   - `frameReceived`: Receive audio stream from Livekit Server.
+      ```js
+      const voice = await client.voice.connect();
+      voice.on("frameReceived", data => {
+         console.log(data)
+      })
+      ```
+   - `disconnected`: Notify when the Voice is disconnect.
+      ```js
+      const voice = await client.voice.connect();
+      voice.on("disconnected", () => {
+         console.log("Voice disconnected!")
+      })
+      ```
+   [Back to the Table of contents](#table-of-contents)
+
+- ## voice.connect().input_write
+   Send audio PCM raw data to the Livekit Server.
+
+   ```js
+   const voice = await client.voice.connect();
+   voice.input_write();
+   ```
+
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | pcm_data | `true` | `Buffer` | PCM Buffer Data. |
+   
+   [Back to the Table of contents](#table-of-contents)
+
+- ## voice.connect().is_speech
+   this function checking is the PCM buffer frame is silence or not.  
+   if the PCM Buffer is silence, it will return false. if not, it will return true  
+
+   Threshold default: 1000
+
+   Credit: https://github.com/ashishbajaj99/mic/blob/master/lib/silenceTransform.js
+
+   ```js
+   const voice = await client.voice.connect();
+   voice.is_speech();
+   ```
+
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | chunk | `true` | `Buffer` | PCM Buffer Data. |
+   | Threshold | `false` | `number` | Threshold. (Default = 1000) |
+
+   [Back to the Table of contents](#table-of-contents)
+
+- ## voice.connect().interrupt_call
+   Interrupt while character talking.
+
+   ```js
+   const voice = await client.voice.connect();
+   await voice.interrupt_call();
+   ```
+
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | none | `false` | `null` | - |
+
+   [Back to the Table of contents](#table-of-contents)
+
+- ## voice.connect().disconnect
+   Disconnect from voice character.
+
+   ```js
+   const voice = await client.voice.connect();
+   await voice.disconnect();
+   ```
+
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | none | `false` | `null` | - |
 
    [Back to the Table of contents](#table-of-contents)
 
