@@ -26,6 +26,8 @@ CAINode is now using ESM. Please read at [Getting Started](#getting-started) fir
    - [user.info](#userinfo) - Get current information account.
    - [user.change_info](#userchange_info) - Change current information account.
    - [user.settings](#usersettings) - Get current settings information account.
+   - [user.refresh_settings](#userrefresh_settings) - Refresh current user settings.
+   - [user.update_settings](#userupdate_settings) - Update user settings by your own settings.
    - [user.public_info](#userpublic_info) - Get user public information account.
    - [user.public_info_array](#userpublic_info_array) - Get user public information account. same like `public_info()`, but this function have less information.
    - [user.public_following_list](#userpublic_following_list) - Get public user following list.
@@ -36,6 +38,9 @@ CAINode is now using ESM. Please read at [Getting Started](#getting-started) fir
    - [user.unfollow](#userunfollow) - Unfollow user account.
    - [user.search](#usersearch) - Search user by name.
    - [user.liked_character_list](#userliked_character_list) - Get a list of characters that the account likes.
+   - [user.add_muted_words](#useradd_muted_words) - Add muted words.
+   - [user.remove_muted_words](#userremove_muted_words) - Remove muted words.
+   - [user.clear_muted_words](#userclear_muted_words) - Clear muted words.
 - [Image Function List](#image-function-list)
    - [image.generate_avatar](#imagegenerate_avatar) - Generate avatar image using prompt.
    - [image.generate_image](#imagegenerate_image) - Generate image using prompt.
@@ -274,12 +279,42 @@ To install CAINode, you can simply do
    Get account settings information data.
 
    ```js
-   await client.user.settings();
+   console.log(client.user.settings)
    ```
 
    | Param | Require | Type | Description | 
    | --- | --- | --- | --- | 
    | none | `false` | `null` | - |
+
+   [Back to the Table of contents](#table-of-contents)
+
+
+- ## user.refresh_settings()
+   Refresh settings. also it will returns the current of the settings.
+   no need to do `library_name.user.settings` after call this function.
+   You can do console.log() instead.  
+
+   ```js
+   await library_name.user.refresh_settings()
+   ```
+
+   | Param | Require | Type | Description | 
+   | --- | --- | --- | --- | 
+   | none | `false` | `null` | - |
+
+   [Back to the Table of contents](#table-of-contents)
+
+
+- ## user.update_settings()
+   Update user settings by your own settings manually.
+
+   ```js
+   await library_name.user.update_settings()
+   ```
+
+   | Param | Require | Type | Description | 
+   | --- | --- | --- | --- | 
+   | settings_object | `true` | `Object` | User Settings. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -385,6 +420,62 @@ To install CAINode, you can simply do
    | none | `false` | `null` | - |
 
    [Back to the Table of contents](#table-of-contents)
+
+
+- ## user.add_muted_words()
+   Add muted words.
+
+   Example
+   - Array
+      ```js
+      await library_name.user.add_muted_words(["hello", "world"])
+      ```
+   - String
+      ```js
+      await library_name.user.add_muted_words("hello world")
+      ```
+
+   | Param | Require | Type | Description | 
+   | --- | --- | --- | --- | 
+   | words | `true` | `string[] | string` | Words that you want to add to the muted words. |
+
+   [Back to the Table of contents](#table-of-contents)
+
+
+- ## user.remove_muted_words()
+   Remove muted words.
+
+   Example
+   - Array
+      ```js
+      await library_name.user.remove_muted_words(["hello", "world"])
+      ```
+   - String
+      ```js
+      await library_name.user.remove_muted_words("hello world")
+      ```
+
+   | Param | Require | Type | Description | 
+   | --- | --- | --- | --- | 
+   | words | `true` | `string[] | string` | Words that you want to remove from the muted words. |
+
+   [Back to the Table of contents](#table-of-contents)
+
+
+- ## user.clear_muted_words()
+   Clear muted words.
+
+   ```js
+   await library_name.user.clear_muted_words()
+   ```
+
+   | Param | Require | Type | Description | 
+   | --- | --- | --- | --- | 
+   | none | `false` | `null` | - |
+
+   [Back to the Table of contents](#table-of-contents)
+
+
 # Image Function List
 - ## image.generate_avatar()
    Generate avatar image using prompt.
