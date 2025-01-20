@@ -131,6 +131,19 @@ function send_ws(ws_con, data, using_json, wait_json_prop_type, wait_ai_response
     })
 }
 
+
+/**
+ * @typedef CAINode_Property
+ * @property {WebSocket[]} ws
+ * @property {string} token
+ * @property {UserInfo} user_data
+ * @property {string} current_chat_id
+ * @property {string} current_char_id_chat
+ * @property {string} edge_rollout
+ * @property {UserSettings} user_settings
+ * @property {number} join_type
+ * @property {number[]} is_connected_livekit_room
+ */
 class CAINode_prop {
     ws = [];
     token = "";
@@ -138,6 +151,7 @@ class CAINode_prop {
     current_chat_id = "";
     current_char_id_chat = "";
     edge_rollout = "";
+    user_settings = {};
     join_type = 0;
     is_connected_livekit_room = [0];
 }
@@ -181,6 +195,10 @@ class User_Class {
      * @property {string | undefined} default_persona_id
      * @property {Record<string, string> | undefined} voiceOverrides
      * @property {Record<string, string> | undefined} personaOverrides
+     * @property {boolean} voiceOverridesMigrated
+     * @property {boolean} proactiveDmOptedOut
+     * @property {Object} outputStylePreferences
+     * @property {Set<string>} outputStylePreferences.bannedWords
     */
 
     /**
@@ -254,6 +272,9 @@ class User_Class {
      * 
     */
 
+    /**
+     * @type {CAINode_Property}
+     */
     #prop;
     constructor(prop) {
         this.#prop = prop
@@ -262,12 +283,21 @@ class User_Class {
     /**
      * Get current information account.  
      *   
-     * Example: `library_name.user.info`
+     * Example: `console.log(library_name.user.info)`
      * 
      * @returns {UserInfo}
     */
     get info() {
-        return !this.#prop.token ? (() => {throw "Please login first."})() : this.#prop.user_data
+        return !this.#prop.token ? (() => {throw "Please login first."})() : this.#prop.user_data;
+    }
+
+    /**
+     * Get current settings account.  
+     *   
+     * Example: `console.log(library_name.user.settings)`
+    */
+    get settings() {
+        return !this.#prop.token ? (() => {throw "Please login first."})() : this.#prop.user_settings;
     }
 
     /**
@@ -332,6 +362,8 @@ class User_Class {
      * @returns {Promise<StatusInfo>}
     */
     async change_info(username = "", name = "", avatar_rel_path = "", bio = "") {
+        if (!this.#prop.token) throw "Please login first.";
+
         return await (await https_fetch("https://plus.character.ai/chat/user/update/", "POST", {"Authorization": `Token ${this.#prop.token}`}, JSON.stringify({
             "username": username && username !== this.#prop.user_data.user.user.username ? (() => {
                 this.#prop.user_data.user.user.username = username
@@ -354,15 +386,39 @@ class User_Class {
     }
 
     /**
-     * Get current settings information account.  
+     * Refresh settings. also it will returns the current of the settings.  
+     * no need to do `library_name.user.settings` after call this function.  
      *   
-     * Example: `await library_name.user.settings()`
+     * Example: `await library_name.user.refresh_settings()`
      * 
      * @returns {Promise<UserSettings>}
     */
-    async settings() {
+    async refresh_settings() {
         if (!this.#prop.token) throw "Please login first."
-        return await (await https_fetch("https://plus.character.ai/chat/user/settings/", "GET", {"Authorization": `Token ${this.#prop.token}`})).json()
+        this.#prop.user_settings = await (await https_fetch("https://plus.character.ai/chat/user/settings/", "GET", {"Authorization": `Token ${this.#prop.token}`})).json();
+        if ((typeof this.#prop.user_settings.outputStylePreferences) !== "object") this.#prop.user_settings.outputStylePreferences = {};
+        this.#prop.user_settings.outputStylePreferences.bannedWords = new Set(Array.isArray(this.#prop.user_settings.outputStylePreferences.bannedWords) ? this.#prop.user_settings.outputStylePreferences.bannedWords : [])        
+        return this.#prop.user_settings
+    }
+
+    /**
+     * Update user settings by your own settings.  
+     *   
+     * Example: `await library_name.user.change_settings()`
+     * 
+     * @param {UserSettings | Object} settings_object
+     * @returns {Promise<UserSettings | Object>}
+    */
+    async update_settings(settings_object) {
+        if (!this.#prop.token) throw "Please login first.";
+
+        const result = await (await https_fetch("https://plus.character.ai/chat/user/update_settings/", "POST", {
+            "Authorization": `Token ${this.#prop.token}`,
+            "Content-Type": "application/json"
+        }, JSON.stringify(settings_object))).json();
+
+        await this.refresh_settings();
+        return result;
     }
     
     /**
@@ -467,6 +523,81 @@ class User_Class {
     async liked_character_list() {
         if (!this.#prop.token) throw "Please login first."
         return await (await https_fetch("https://plus.character.ai/chat/user/characters/upvoted/", "GET", {"Authorization": `Token ${this.#prop.token}`})).json()
+    }
+
+    /**
+     * Add muted words.  
+     *   
+     * Example  
+     * - Using array: `await library_name.user.add_muted_words(["hello", "world"])`  
+     * - Using string: `await library_name.user.add_muted_words("hello world")`
+     * @param {string[] | string} words
+     * @returns {Promise<{status: boolean, settings: UserSettings}>}
+    */
+    async add_muted_words(words) {
+        if (!this.#prop.token) throw "Please login first."
+        
+        if (Array.isArray(words)) {
+            for (let a = 0; a < words.length; a++) {
+                if (!words[a]) throw `word at index ${a} cannot be empty.`
+                if (words[a].includes(' ')) throw `this word ('${words[a]}') must be single word.`
+                this.#prop.user_settings.outputStylePreferences.bannedWords.add(words[a])
+            }
+        } else {
+            words = words.split(' ');
+            for (let a = 0; a < words.length; a++) {
+                if (!words[a]) throw `word at index ${a} cannot be empty.`
+                this.#prop.user_settings.outputStylePreferences.bannedWords.add(words[a])
+            }
+        }
+
+        return await this.update_settings({"outputStylePreferences": {
+            "bannedWords": [...this.#prop.user_settings.outputStylePreferences.bannedWords]
+        }});
+    }
+
+    /**
+     * Remove muted word.  
+     *   
+     * Example  
+     * - Using array: `await library_name.user.remove_muted_word(["hello", "world"])`  
+     * - Using string: `await library_name.user.remove_muted_word("hello world")`
+     * 
+     * @param {string[] | string} words
+     * @returns {Promise<{status: boolean, settings: UserSettings}>}
+    */
+    async remove_muted_words(words) {
+        if (!this.#prop.token) throw "Please login first."
+        
+        if (Array.isArray(words)) {
+            for (let a = 0; a < words.length; a++) {
+                if (!words[a]) throw `word at index ${a} cannot be empty.`
+                if (words[a].includes(' ')) throw `this word ('${words[a]}') must be single word.`
+                this.#prop.user_settings.outputStylePreferences.bannedWords.delete(words[a])
+            }
+        } else {
+            words = words.split(' ');
+            for (let a = 0; a < words.length; a++) {
+                if (!words[a]) throw `word at index ${a} cannot be empty.`
+                this.#prop.user_settings.outputStylePreferences.bannedWords.delete(words[a])
+            }
+        }
+        
+        return await this.update_settings({"outputStylePreferences": {
+            "bannedWords": [...this.#prop.user_settings.outputStylePreferences.bannedWords]
+        }});
+    }
+
+    /**
+     * Clear muted words.  
+     *   
+     * Example: `await library_name.user.clear_muted_words()`
+     * 
+     * @returns {Promise<{status: boolean, settings: UserSettings}>}
+    */
+    async clear_muted_words() {
+        if (!this.#prop.token) throw "Please login first."
+        return await this.update_settings({"outputStylePreferences":{"bannedWords":[]}})
     }
 }
 
@@ -3186,11 +3317,13 @@ class CAINode extends EventEmitter {
      * User variables list  
      *   
      * - `info`: contains of your current information account.  
+     * - `settings`: contains of your current user settings account.  
      *   
      * User function list  
      *   
      * - `change_info()`: Change current information account.  
-     * - `settings()`: Get your current settings information account.  
+     * - `refresh_settings()`: Refresh current user settings.  
+     * - `update_settings()`: Update user settings by your own settings.
      * - `public_following_list()`: Get public user following list.  
      * - `public_followers_list()`: Get public user followers list.  
      * - `following_list_name()`: Get account following name list.  
@@ -3201,6 +3334,9 @@ class CAINode extends EventEmitter {
      * - `public_info_array()`: Get user public information account. same like `public_info()`, but this function have less information.  
      * - `liked_character_list()`: Get account liked character list.  
      * - `search()`: Search user by name.
+     * - `add_muted_words()`: Add muted words.
+     * - `remove_muted_words()`: Remove muted words.
+     * - `clear_muted_words()`: Clear muted words.
     */
     user = new User_Class(this.#prop) // User Class
     
@@ -3344,9 +3480,8 @@ class CAINode extends EventEmitter {
      * @returns {Promise<boolean>}
     */
     async login(token) {
-        this.#prop.edge_rollout = (await https_fetch("https://character.ai/", "GET")).headers.get("set-cookie").match(/edge_rollout=(\d+)/)
+        this.#prop.edge_rollout = await (await https_fetch("https://character.ai/", "GET")).headers.get("set-cookie").match(/edge_rollout=(\d+)/)
         if (this.#prop.edge_rollout !== null) this.#prop.edge_rollout = this.#prop.edge_rollout[1];
-
         this.#prop.user_data = await (await https_fetch("https://plus.character.ai/chat/user/", "GET", {
             'Authorization': `Token ${token}`
         })).text()
@@ -3360,6 +3495,8 @@ class CAINode extends EventEmitter {
             await open_ws("wss://neo.character.ai/ws/", `${this.#prop.edge_rollout !== null ? `edge_rollout=${this.#prop.edge_rollout}; ` : ""}HTTP_AUTHORIZATION="Token ${token}"`, 0, this)
         ]
         this.#prop.token = token
+        
+        await this.user.refresh_settings();
         return true;
     }
 
