@@ -1,5 +1,6 @@
 import WebSocket from "ws";
 import EventEmitter from "node:events";
+import { arrayBuffer } from "node:stream/consumers";
 const textDecoder = new TextDecoder()
 
 async function load() {
@@ -2133,18 +2134,28 @@ class GroupChat_Class {
     /**
      * Rename group chat.  
      *   
-     * Example: `await library_name.group_chat.rename("New Name", "Room ID")`
+     * Example: 
+     * - Automatic (must be connected to the group chat): `await library_name.group_chat.rename("New Name")`  
+     * - Input group_id manually: `await library_name.group_chat.rename("New Name", "Room ID")`  
+     *   
+     * NOTE: You can also rename another group chat if you're already connected to the current group chat. (group_id prioritize)
      * 
      * @param {string} new_name
-     * @param {string} room_id
+     * @param {string | undefined} group_id
      * @returns {Promise<GroupChatActivityInfo>}
     */
-    async rename(new_name, room_id) {
+    async rename(new_name, group_id = this.#prop.current_chat_id) {
         if (!this.#prop.token) throw "Pleae login first"
-        return await (await https_fetch(`https://neo.character.ai/muroom/${this.#prop.join_type == 2 ? this.#prop.current_chat_id : room_id}/`, "PATCH", {'Authorization': `Token ${this.#prop.token}`}, JSON.stringify([
+
+        if (!group_id && !this.#prop.current_chat_id) {
+            if (!this.#prop.current_candidate_id) throw "Please at least input group_id or connect to the group chat first.";
+            else group_id = this.#prop.current_chat_id
+        }
+
+        return await (await https_fetch(`https://neo.character.ai/muroom/${group_id}/`, "PATCH", {'Authorization': `Token ${this.#prop.token}`}, JSON.stringify([
             {
                 "op": "replace",
-                "path": `/muroom/${this.#prop.join_type == 2 ? this.#prop.current_chat_id : room_id}`,
+                "path": `/muroom/${group_id}`,
                 "value": {
                     "title": `${new_name}`
                 }
@@ -2169,33 +2180,42 @@ class GroupChat_Class {
     /**
      * Add a character with Character ID to the group chat.  
      *   
-     * Example: `await library_name.group_chat.char_add("Character ID")`
+     * Example
+     * - Automatic (must be connected to the group chat): `await library_name.group_chat.char_add("Character ID")`  
+     * - Input room_id manually: `await library_name.group_chat.char_add("Character ID", "Room ID")`  
+     *   
+     * NOTE: You can also add a character to another group chat if you're already connected to the current group chat. (group_id prioritize)
      * 
      * @param {string} char_id
+     * @param {string | undefined} group_id
      * @returns {Promise<GroupChatActivityInfo>}
     */
-    async char_add(char_id) {
+    async char_add(char_id, group_id = this.#prop.current_chat_id) {
         if (!this.#prop.token) throw "Please login first."
-        if (!this.#prop.join_type || this.#prop.join_type != 2) throw "This function only works when you're connected on Group Chat."
+
+        if (!group_id && !this.#prop.current_chat_id) {
+            if (!this.#prop.current_candidate_id) throw "Please at least input group_id or connect to the group chat first.";
+            else group_id = this.#prop.current_chat_id
+        }
 
         if (Array.isArray(char_id)) {
-            return await (await https_fetch(`https://neo.character.ai/muroom/${this.#prop.current_chat_id}/`, "PATCH", {
+            return await (await https_fetch(`https://neo.character.ai/muroom/${group_id}/`, "PATCH", {
                 'Authorization': `Token ${this.#prop.token}`
             }, JSON.stringify(char_id.map(id => {
                 return {
                     "op": "add",
-                    "path": `/muroom/${this.#prop.current_chat_id}/characters`,
+                    "path": `/muroom/${group_id}/characters`,
                     "value": {
                         "id": id
                     }
                 };
             })))).json()
         } else {
-            return await (await https_fetch(`https://neo.character.ai/muroom/${this.#prop.current_chat_id}/`, "PATCH", {
+            return await (await https_fetch(`https://neo.character.ai/muroom/${group_id}/`, "PATCH", {
                 'Authorization': `Token ${this.#prop.token}`
             }, JSON.stringify([{
                 "op": "add",
-                "path": `/muroom/${this.#prop.current_chat_id}/characters`,
+                "path": `/muroom/${group_id}/characters`,
                 "value": {
                     "id": char_id
                 }
@@ -2206,33 +2226,43 @@ class GroupChat_Class {
     /**
      * Remove a character with Character ID from the group chat.  
      *   
-     * Example: `await library_name.group_chat.char_remove("Character ID")`
+     * Example  
+     * - Automatic (must be connected to the group chat): `await library_name.group_chat.char_remove("Character ID")`  
+     * - Input room_id manually: `await library_name.group_chat.char_remove("Character ID", "Room ID")`  
+     *   
+     * NOTE: You can also rename another room if you're already connected to the current group chat. (room_id prioritize)
      * 
      * @param {string} char_id
+     * @param {string | undefined} room_id
      * @returns {Promise<GroupChatActivityInfo>}
     */
-    async char_remove(char_id) {
+    async char_remove(char_id, group_id = this.#prop.current_chat_id) {
         if (!this.#prop.token) throw "Please login first."
-        if (!this.#prop.join_type || this.#prop.join_type != 2) throw "This function only works when you're connected on Group Chat."
+
+        if (!group_id) group_id = this.#prop.current_chat_id
+        if (this.#prop.join_type == 2) {
+            if (!room_id) room_id = this.#prop.current_chat_id;
+        } else if (!room_id) throw "Please at least input room_id or connect to the group chat first.";
+        if (this.#prop.join_type != 2 && !room_id) throw "Please at least input room_id or connect to the group chat first.";
 
         if (Array.isArray(char_id)) {
-            return await (await https_fetch(`https://neo.character.ai/muroom/${this.#prop.current_chat_id}/`, "PATCH", {
+            return await (await https_fetch(`https://neo.character.ai/muroom/${room_id}/`, "PATCH", {
                 'Authorization': `Token ${this.#prop.token}`
             }, JSON.stringify(char_id.map(id => {
                 return {
                     "op": "remove",
-                    "path": `/muroom/${this.#prop.current_chat_id}/characters`,
+                    "path": `/muroom/${room_id}/characters`,
                     "value": {
                         "id": id
                     }
                 };
             })))).json()
         } else {
-            return await (await https_fetch(`https://neo.character.ai/muroom/${this.#prop.current_chat_id}/`, "PATCH", {
+            return await (await https_fetch(`https://neo.character.ai/muroom/${room_id}/`, "PATCH", {
                 'Authorization': `Token ${this.#prop.token}`
             }, JSON.stringify([{
                 "op": "remove",
-                "path": `/muroom/${this.#prop.current_chat_id}/characters`,
+                "path": `/muroom/${room_id}/characters`,
                 "value": {
                     "id": char_id
                 }
@@ -2243,36 +2273,46 @@ class GroupChat_Class {
     /**
      * Send message to group chat.  
      *   
-     * Example  
+     * Example (Connected to the Group chat)  
      * - Default (Without Image): `await library_name.group_chat.send_message("Your Message")`  
-     * - With Image: `await library_name.group_chat.send_message("Your Message", "URL Image")`
+     * - With Image: `await library_name.group_chat.send_message("Your Message", "URL Image")`  
+     *   
+     * Example (Manually connect to the Group chat)  
+     * - Default (Without Image)
+     * ```
+     * await library_name.group_chat.send_message("Your Message", null, {
+     *     groupchat_id: "Group Chat ID"
+     * })
+     * ```  
+     * - With Image
+     * ```
+     * await library_name.group_chat.send_message("Your Message", "URL Image", {
+     *      groupchat_id: "Group Chat ID"
+     * })
+     * ```
      * 
      * @param {string} message
      * @param {string | undefined} image_url_path
-     * @param {number} timeout_ms
+     * @param {{groupchat_id: string, timeout_ms: number} | undefined} manual_opt
      * @returns {Promise<GroupChatInfo>}
     */
-    async send_message(message, image_url_path = "", timeout_ms = 0) {
+    async send_message(message, image_url_path = "", manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}) {
         if (!this.#prop.token) throw "Please login first."
         if (!this.#prop.join_type || this.#prop.join_type != 2) throw "This function only works when you're connected on Group Chat."
 
-        if (typeof manual_opt != "object") {
-            manual_opt = {
-                char_id: this.#prop.current_char_id_chat,
-                chat_id: this.#prop.current_chat_id,
-                timeout_ms: 0
-            }
-        }
+        if (typeof manual_opt != "object") manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}
+        if (typeof manual_opt.groupchat_id != "string" || !manual_opt.groupchat_id) manual_opt.groupchat_id = this.#prop.current_chat_id
+        if (typeof manual_opt.timeout_ms != "number" || manual_opt.timeout_ms < 0) manual_opt.timeout_ms = 0;
 
-        if (timeout_ms < 0) timeout_ms = 0;
+        if (!manual_opt.groupchat_id) throw "Group Chat ID cannot be empty, or at least connect to the Group Chat first.";
 
-        const turn_key = this.#prop.join_type ? generateRandomUUID() : ""
+        const turn_key = generateRandomUUID();
         return await send_ws(this.#prop.ws[0], JSON.stringify({
             "rpc": {
                 "method": "unused_command",
                 "data": {
                     "command": "create_turn",
-                    "request_id": generateRandomUUID().slice(0, -12) + this.#prop.current_chat_id.split("-")[4],
+                    "request_id": generateRandomUUID().slice(0, -12) + manual_opt.groupchat_id.split("-")[4],
                     "payload": {
                         "chat_type": "TYPE_MU_ROOM",
                         "num_candidates": 1,
@@ -2280,7 +2320,7 @@ class GroupChat_Class {
                         "turn": {
                             "turn_key": {
                                 "turn_id": turn_key,
-                                "chat_id": this.#prop.current_chat_id
+                                "chat_id": manual_opt.groupchat_id
                             },
                             "author": {
                                 "author_id": `${this.#prop.user_data.user.user.id}`,
@@ -2298,31 +2338,42 @@ class GroupChat_Class {
                 }
             },
             "id": 1
-        }), true, 2, false, null, timeout_ms)
+        }), true, 2, false, null, manual_opt.timeout_ms)
     }
 
     /**
      * Generating message response character from group chat.  
      *   
-     * Example: `await library_name.group_chat.generate_turn()`
+     * Example (Connected to the Group Chat): `await library_name.group_chat.generate_turn()`  
+     * Example (Manually connect to the Group chat)  
+     * ```
+     * await library_name.group_chat.generate_turn({
+     *      groupchat_id: "Your Group Chat ID"
+     * })
+     * ```
      * 
-     * @param {number} timeout_ms
+     * @param {{groupchat_id: string, timeout_ms: number} | undefined} manual_opt
      * @returns {Promise<GroupChatInfo>}
     */
-    async generate_turn(timeout_ms = 0) {
+    async generate_turn(manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}) {
         if (!this.#prop.token) throw "Please login first."
         if (!this.#prop.join_type || this.#prop.join_type != 2) throw "This function only works when you're connected on Group Chat."
-        if (timeout_ms < 0) timeout_ms = 0;
+        
+        if (typeof manual_opt != "object") manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}
+        if (typeof manual_opt.groupchat_id != "string" || !manual_opt.groupchat_id) manual_opt.groupchat_id = this.#prop.current_chat_id
+        if (typeof manual_opt.timeout_ms != "number" || manual_opt.timeout_ms < 0) manual_opt.timeout_ms = 0;
+
+        if (!manual_opt.groupchat_id) throw "Group Chat ID cannot be empty, or at least connect to the Group Chat first.";
 
         return await send_ws(this.#prop.ws[0], JSON.stringify({
             "rpc": {
                 "method": "unused_command",
                 "data": {
                     "command": "generate_turn",
-                    "request_id": generateRandomUUID().slice(0, -12) + this.#prop.current_chat_id.split("-")[4],
+                    "request_id": generateRandomUUID().slice(0, -12) + manual_opt.groupchat_id.split("-")[4],
                     "payload": {
                         "chat_type": "TYPE_MU_ROOM",
-                        "chat_id": this.#prop.current_chat_id,
+                        "chat_id": manual_opt.groupchat_id,
                         "user_name": this.#prop.user_data.user.user.username,
                         "smart_reply": "CHARACTERS",
                         "smart_reply_delay": 0
@@ -2331,56 +2382,73 @@ class GroupChat_Class {
                 }
             },
             "id": 1
-        }), true, 2, true)
+        }), true, 2, true, null, manual_opt.timeout_ms)
     }
 
     /**
      * Regenerate character message.  
      *   
-     * Example: `await library_name.group_chat.generate_turn_candidate()`
+     * Example (Connected to current Group Chat): `await library_name.group_chat.generate_turn_candidate("Turn ID", "Character ID")`  
+     * Example (targeting to another Group chat)  
+     * ```
+     * await library_name.group_chat.generate_turn_candidate("Turn ID", "Character ID", {
+     *      groupchat_id: "Your Group Chat ID"
+     * })
+     * ```
      * 
      * @param {string} turn_id
      * @param {string} char_id
-     * @param {number} timeout_ms
+     * @param {{groupchat_id: string, timeout_ms: number} | undefined} manual_opt
      * @returns {Promise<GroupChatInfo>}
     */
-    async generate_turn_candidate(turn_id, char_id, timeout_ms = 0) {
+    async generate_turn_candidate(turn_id, char_id, manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}) {
         if (!this.#prop.token) throw "Please login first."
         if (!this.#prop.join_type || this.#prop.join_type != 2) throw "This function only works when you're connected on Group Chat."
         
-        if (timeout_ms < 0) timeout_ms = 0;
+        if (typeof manual_opt != "object") manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}
+        if (typeof manual_opt.groupchat_id != "string" || !manual_opt.groupchat_id) manual_opt.groupchat_id = this.#prop.current_chat_id
+        if (typeof manual_opt.timeout_ms != "number" || manual_opt.timeout_ms < 0) manual_opt.timeout_ms = 0;
+
+        if (!manual_opt.groupchat_id) throw "Group Chat ID cannot be empty, or at least connect to the Group Chat first.";
 
         return await send_ws(this.#prop.ws[0], JSON.stringify({
             "rpc": {
                 "method": "unused_command",
                 "data": {
                     "command": "generate_turn_candidate",
-                    "request_id": generateRandomUUID().slice(0, -12) + this.#prop.current_chat_id.split("-")[4],
+                    "request_id": generateRandomUUID().slice(0, -12) + manual_opt.groupchat_id.split("-")[4],
                     "payload": {
                         "chat_type": "TYPE_MU_ROOM",
                         "character_id": char_id,
                         "user_name": this.#prop.user_data.user.user.username,
                         "turn_key": {
                             "turn_id": turn_id,
-                            "chat_id": this.#prop.current_chat_id
+                            "chat_id": manual_opt.groupchat_id
                         }
                     }
                 }
             },
             "id": 1
-        }), true, 2, true)
+        }), true, 2, true, null, manual_opt.timeout_ms)
     }
 
     /**
      * Reset conversation in group chat.  
      *   
-     * Example: `await library_name.group_chat.reset_conversation()`
+     * Example (Connected to current Group Chat): `await library_name.group_chat.reset_conversation()`  
+     * Example (targeting to another Group chat): `await library_name.group_chat.reset_conversation({groupchat_id: "Group Chat ID"})`
      * 
+     * @param {{groupchat_id: string, timeout_ms: number}} manual_opt
      * @returns {Promise<GroupChatInfo>}
     */
-    async reset_conversation() {
+    async reset_conversation(manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}) {
         if (!this.#prop.token) throw "Please login first."
-        if (!this.#prop.join_type || this.#prop.join_type != 2) throw "This function only works when you're connected on Group Chat."
+
+        if (typeof manual_opt != "object") manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}
+        if (typeof manual_opt.groupchat_id != "string" || !manual_opt.groupchat_id) manual_opt.groupchat_id = this.#prop.current_chat_id
+        if (typeof manual_opt.timeout_ms != "number" || manual_opt.timeout_ms < 0) manual_opt.timeout_ms = 0;
+
+        if (!manual_opt.groupchat_id) throw "Group Chat ID cannot be empty, or at least connect to the Group Chat first.";
 
         const turn_key = generateRandomUUID()
         return await send_ws(this.#prop.ws[0], JSON.stringify({
@@ -2388,7 +2456,7 @@ class GroupChat_Class {
                 "method": "unused_command",
                 "data": {
                     "command": "create_turn",
-                    "request_id": generateRandomUUID().slice(0, -12) + this.#prop.current_chat_id.split("-")[4],
+                    "request_id": generateRandomUUID().slice(0, -12) + manual_opt.groupchat_id.split("-")[4],
                     "payload": {
                         "chat_type": "TYPE_MU_ROOM",
                         "num_candidates": 1,
@@ -2397,7 +2465,7 @@ class GroupChat_Class {
                             "context_reset": true,
                             "turn_key": {
                                 "turn_id": turn_key,
-                                "chat_id": this.#prop.current_chat_id
+                                "chat_id": manual_opt.groupchat_id
                             },
                             "author": {
                                 "author_id": `${this.#prop.user_data.user.user.id}`,
@@ -2414,54 +2482,75 @@ class GroupChat_Class {
                 }
             },
             "id": 1
-        }), true, 2, false)
+        }), true, 2, false, false, manual_opt.timeout_ms)
     }
 
     /**
      * Delete user/character message.  
      *   
-     * Example: `await library_name.group_chat.delete_message("Turn ID")`
+     * Example (Connected to current Group Chat): `await library_name.group_chat.delete_message("Turn ID")`  
+     * Example (targeting to another Group chat): `await library_name.group_chat.delete_message("Turn ID", {groupchat_id: "Group Chat ID"})`
      * 
      * @param {string} turn_id
+     * @param {{groupchat_id: string, timeout_ms: number}} manual_opt
      * @returns {Promise<boolean>}
     */
-    async delete_message(turn_id) {
+    async delete_message(turn_id, manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}) {
         if (!this.#prop.token) throw "Please login first."
-        if (!this.#prop.join_type || this.#prop.join_type != 2) throw "This function only works when you're connected on Group Chat."
+
+        if (typeof manual_opt != "object") manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}
+        if (typeof manual_opt.groupchat_id != "string" || !manual_opt.groupchat_id) manual_opt.groupchat_id = this.#prop.current_chat_id
+        if (typeof manual_opt.timeout_ms != "number" || manual_opt.timeout_ms < 0) manual_opt.timeout_ms = 0;
+
+        if (!manual_opt.groupchat_id) throw "Group Chat ID cannot be empty, or at least connect to the Group Chat first.";
+        if (typeof turn_id !== "string") throw "Please provide a valid turn_id.";
 
         await send_ws(this.#prop.ws[1], JSON.stringify({
             "command": "remove_turns",
-            "request_id": generateRandomUUID().slice(0, -12) + this.#prop.current_chat_id.split("-")[4],
+            "request_id": generateRandomUUID().slice(0, -12) + manual_opt.groupchat_id.split("-")[4],
             "payload": {
-                "chat_id": this.#prop.current_chat_id,
+                "chat_id": manual_opt.groupchat_id,
                 "turn_ids": Array.isArray(turn_id) ? turn_id : [turn_id]
             },
             "origin_id": "Android"
-        }), false, 0, false)
+        }), false, 0, false, false, manual_opt.timeout_ms)
         return true;
     }
 
     /**
      * Edit user/character message.  
      *   
-     * Example: `await library_name.group_chat.edit_message("Turn ID")`
+     * Example (Connected to current Group Chat): `await library_name.group_chat.edit_message("Candidate ID", "Turn ID", "New Message")`  
+     * Example (targeting to another Group chat): `await library_name.group_chat.edit_message("Candidate ID", "Turn ID", "New Message", {groupchat_id: "Group Chat ID"})`
      * 
+     * @param {string} candidate_id
      * @param {string} turn_id
+     * @param {string} new_message
+     * @param {{groupchat_id: string, timeout_ms: number}} manual_opt
+     * 
      * @returns {Promise<GroupChatInfo>}
     */
-    async edit_message(candidate_id, turn_id, new_message) {
+    async edit_message(candidate_id, turn_id, new_message, manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}) {
         if (!this.#prop.token) throw "Please login first."
-        if (!this.#prop.join_type || this.#prop.join_type != 2) throw "This function only works when you're connected on Group Chat."
+        
+        if (typeof manual_opt != "object") manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}
+        if (typeof manual_opt.groupchat_id != "string" || !manual_opt.groupchat_id) manual_opt.groupchat_id = this.#prop.current_chat_id
+        if (typeof manual_opt.timeout_ms != "number" || manual_opt.timeout_ms < 0) manual_opt.timeout_ms = 0;
+
+        if (!manual_opt.groupchat_id) throw "Group Chat ID cannot be empty, or at least connect to the Group Chat first.";
+
+        if (typeof candidate_id !== "string") throw "Please provide a valid candidate_id.";
+        if (typeof turn_id !== "string") throw "Please provide a valid turn_id.";
         
         const result = await send_ws(this.#prop.ws[0], JSON.stringify({
             "rpc": {
                 "method": "unused_command",
                 "data": {
                     "command": "edit_turn_candidate",
-                    "request_id": generateRandomUUID().slice(0, -12) + this.#prop.current_chat_id.split("-")[4],
+                    "request_id": generateRandomUUID().slice(0, -12) + manual_opt.groupchat_id.split("-")[4],
                     "payload": {
                         "turn_key": {
-                            "chat_id": this.#prop.current_chat_id,
+                            "chat_id": manual_opt.groupchat_id,
                             "turn_id": turn_id
                         },
                         "current_candidate_id": candidate_id,
@@ -2470,7 +2559,7 @@ class GroupChat_Class {
                 }
             },
             "id": 1
-        }), true, 2, false)
+        }), true, 2, false, false, manual_opt.timeout_ms)
 
         if (!result.push.pub.data.turn.author.is_human) {
             await send_ws(this.#prop.ws[1], JSON.stringify({
@@ -2483,7 +2572,7 @@ class GroupChat_Class {
                     }
                 },
                 "origin_id": "Android"
-            }), false, 0, false)
+            }), false, 0, false, manual_opt.timeout_ms)
         }
         return result;
     }
@@ -2491,32 +2580,39 @@ class GroupChat_Class {
     /**
      * Select the turn of character chat by yourself.  
      *   
-     * Example: `await library_name.group_chat.select_turn("Character ID")`
+     * Example (Connected to current Group Chat): `await library_name.group_chat.select_turn("Character ID", "Turn ID")`  
+     * Example (targeting to another Group chat): `await library_name.group_chat.select_turn("Character ID", {groupchat_id: "Group Chat ID"})`
      * 
      * @param {string} char_id
-     * @param {number} timeout_ms
+     * @param {{groupchat_id: string, timeout_ms: number}} manual_opt
      * @returns {Promise<GroupChatInfo>}
     */
-    async select_turn(char_id, timeout_ms = 0) {
+    async select_turn(char_id, manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}) {
         if (!this.#prop.token) throw "Please login first."
-        if (!this.#prop.join_type || this.#prop.join_type != 2) throw "This function only works when you're connected on Group Chat."
-        if (timeout_ms < 0) timeout_ms = 0;
+
+        if (typeof manual_opt != "object") manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}
+        if (typeof manual_opt.groupchat_id != "string" || !manual_opt.groupchat_id) manual_opt.groupchat_id = this.#prop.current_chat_id
+        if (typeof manual_opt.timeout_ms != "number" || manual_opt.timeout_ms < 0) manual_opt.timeout_ms = 0;
+
+        if (!manual_opt.groupchat_id) throw "Group Chat ID cannot be empty, or at least connect to the Group Chat first.";
+
+        if (typeof char_id !== "string") throw "Please provide a valid char_id.";
         
         return await send_ws(this.#prop.ws[0], JSON.stringify({
             "rpc": {
                 "method": "unused_command",
                 "data": {
                     "command": "generate_turn",
-                    "request_id": generateRandomUUID().slice(0, -12) + this.#prop.current_chat_id.split("-")[4],
+                    "request_id": generateRandomUUID().slice(0, -12) + manual_opt.groupchat_id.split("-")[4],
                     "payload": {
                         "chat_type": "TYPE_MU_ROOM",
                         "character_id": char_id,
-                        "chat_id": this.#prop.current_chat_id
+                        "chat_id": manual_opt.groupchat_id
                     }
                 }
             },
             "id": 1
-        }), true, 2, true)
+        }), true, 2, true, false, timeout_ms)
     }
 }
 
