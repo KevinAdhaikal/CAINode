@@ -1,5 +1,6 @@
 import WebSocket from "ws";
 import EventEmitter from "node:events";
+import { AudioResampler } from "@livekit/rtc-node";
 const textDecoder = new TextDecoder()
 
 async function load() {
@@ -3224,6 +3225,7 @@ class Voice_Class {
      *   
      * Connect to voice character chat, and this function works only for single character chat.  
      *   
+     * ---
      * Example function  
      * - Using Query: `await library_name.voice.connect("Query", true)`  
      * - Using Voice ID: `await library_name.voice.connect("Voice ID")`
@@ -3285,10 +3287,14 @@ class Voice_Class {
      *      });
      *      ```
      *   
+     * Or, if you just wanted to get the Livekit information only: 
+     * ```js
+     * console.log(await library_name.voice.connect("Sonic the Hedgehog", true, false, null, {return_livekit_information_only: true}))
+     * ```  
+     * ---
      * Livekit variable list (when you're connected to the character voice)  
      * - `is_character_speaking`: Check is Character is speaking or not.  
      *    
-     *   
      * Livekit function list (when you're connected to the character voice)  
      *   
      * - `on()` event:  
@@ -3303,16 +3309,16 @@ class Voice_Class {
      * @param {string} voice_query_or_id
      * @param {boolean} using_voice_query
      * @param {boolean} using_mic
-     * @param {{sample_rate: number, channel: number}} mic_opt
-     * @param {{char_id: string, chat_id: string}} manual_opt
+     * @param {{sample_rate: number, channel: number} | undefined} mic_opt
+     * @param {{char_id: string, chat_id: string, return_livekit_information_only: boolean} | undefined} manual_opt
      * @returns {Promise<Livekit_Class>}
     */
     async connect(voice_query_or_id, using_voice_query = false, using_mic = false, mic_opt = {"sample_rate": 48000, "channel": 1}, manual_opt = {
         char_id: this.#prop.current_char_id_chat,
         chat_id: this.#prop.current_chat_id,
+        return_livekit_information_only: false
     }) {
         if (!this.#prop.token) throw "Please login first."
-
         if (this.#prop.is_connected_livekit_room[0]) throw "You're already connected to Livekit room!"
 
         if (typeof mic_opt != "object") {
@@ -3321,6 +3327,8 @@ class Voice_Class {
                 channel: 1
             }
         }
+        if (typeof mic_opt.sample_rate != "number" || !mic_opt.sample_rate) mic_opt.sample_rate = 48000
+        if (typeof mic_opt.channel != "number" || !mic_opt.channel) mic_opt.channel = 1
 
         if (typeof manual_opt != "object") {
             manual_opt = {
@@ -3329,17 +3337,15 @@ class Voice_Class {
             }
         }
 
-        if (!mic_opt.sample_rate) mic_opt.sample_rate = 48000
-        if (!mic_opt.channel) mic_opt.channel = 1
-
-        if (!manual_opt.char_id) {
+        if (typeof manual_opt.char_id != "string" || !manual_opt.char_id) {
             if (this.#prop.current_char_id_chat) manual_opt.char_id = this.#prop.current_char_id_chat
             else throw "Character ID cannot be empty! please input Character ID correctly, or connect to the character by using character.connect() function."
         }
-        if (!manual_opt.chat_id) {
+        if (typeof manual_opt.chat_id != "string" || !manual_opt.chat_id) {
             if (this.#prop.current_chat_id) manual_opt.chat_id = this.#prop.current_chat_id
             else throw "Chat ID cannot be empty! please input Chat ID correctly, or connect to the character by using character.connect() function."
         }
+        if (typeof manual_opt.return_livekit_information_only != "boolean") manual_opt.return_livekit_information_only = false
 
         return new Promise(async resolve => {
             const livekit = await import("@livekit/rtc-node").catch(_ => {
@@ -3369,39 +3375,41 @@ class Voice_Class {
                 if (connect_result.message.includes("error reading voice")) throw "Error: Voice ID not found! Please input a correct Voice ID."
                 else throw `Error: ${connect_result.message}`
             }
+            if (manual_opt.return_livekit_information_only) resolve(connect_result)
+            else {
+                const livekit_room = new livekit.Room();
 
-            const livekit_room = new livekit.Room();
-
-            livekit_room.once("trackSubscribed", track => {
-                if (track.kind == 1) {
-                    /**
-                     * Livekit variable list (when you're connected to the character voice)
-                        * - `is_character_speaking`: Check is Character is speaking or not.  
-                        *    
-                        * Livekit function list (when you're connected to the character voice)  
-                        *   
-                        * - `on()` event:  
-                        *   - "dataReceived": Receive Character.AI Livekit data events.  
-                        *   - "frameReceived": Receive audio stream from Livekit Server.  
-                        *   - "disconnected": Notify when the Voice is disconnect.  
-                        * - `input_write()`: Send audio PCM raw data to the Livekit Server.  
-                        * - `is_speech()`: this function checking is the PCM buffer frame is silence or not.  
-                        * - `interrupt_call()`: Interrupt while character talking.  
-                        * - `disconnect()`: Disconnect from voice character.
-                    */
-                    resolve(new Livekit_Class(this.#prop.token, livekit, livekit_room, {
-                        sample_rate: mic_opt.sample_rate ? mic_opt.sample_rate : 48000,
-                        channel: mic_opt.channel ? mic_opt.channel : 1,
-                        char_id: manual_opt.char_id,
-                        chat_id: manual_opt.chat_id
-                    }, using_mic, track));
-                }
-            });
-            await livekit_room.connect(connect_result.lkUrl, connect_result.lkToken, {
-                autoSubscribe: true,
-                dynacast: true
-            })
-        })
+                livekit_room.once("trackSubscribed", track => {
+                    if (track.kind == 1) {
+                        /**
+                         * Livekit variable list (when you're connected to the character voice)
+                            * - `is_character_speaking`: Check is Character is speaking or not.  
+                            *    
+                            * Livekit function list (when you're connected to the character voice)  
+                            *   
+                            * - `on()` event:  
+                            *   - "dataReceived": Receive Character.AI Livekit data events.  
+                            *   - "frameReceived": Receive audio stream from Livekit Server.  
+                            *   - "disconnected": Notify when the Voice is disconnect.  
+                            * - `input_write()`: Send audio PCM raw data to the Livekit Server.  
+                            * - `is_speech()`: this function checking is the PCM buffer frame is silence or not.  
+                            * - `interrupt_call()`: Interrupt while character talking.  
+                            * - `disconnect()`: Disconnect from voice character.
+                        */
+                        resolve(new Livekit_Class(this.#prop.token, livekit, livekit_room, {
+                            sample_rate: mic_opt.sample_rate ? mic_opt.sample_rate : 48000,
+                            channel: mic_opt.channel ? mic_opt.channel : 1,
+                            char_id: manual_opt.char_id,
+                            chat_id: manual_opt.chat_id
+                        }, using_mic, track));
+                    }
+                });
+                await livekit_room.connect(connect_result.lkUrl, connect_result.lkToken, {
+                    autoSubscribe: true,
+                    dynacast: true
+                })
+            }
+        })  
     }
 }
 
@@ -3596,23 +3604,36 @@ class CAINode extends EventEmitter {
     }
 
     /**
-     * Generate your Character.AI Token by email.  
+     * Send Character.AI Verify code to the email.  
+     * 
+     * @param {string} email
+    */
+    async send_code(email) {
+        await https_fetch("https://character.ai/api/trpc/auth.login?batch=1", "POST", {
+            "Content-Type": "application/json"
+        }, JSON.stringify({"0":{"json":{"email":email}}}))
+    }
+
+    /**
+     * Generate your Character.AI Token by email. and you will get the token by just pressing the button when you receive the email.  
      *   
      * Parameter 2: Timeout per 2 seconds (default 30, so it means = 60 seconds or 1 minute)  
      * You can disable the Timeout by set the parameter into 0.  
      *   
+     * Parameter Info  
+     * - 1st parameter `email`: Target email you want to generate the token.
      * Example  
      * - Without Timer: `console.log(await library_name.generate_token("your@email.com", 0))`  
      * - With Timer: `console.log(await library_name.generate_token("your@email.com", 60))`
      * - With callback: `console.log(await library_name.generate_token("your@email.com", 30, function() {console.log("Please check your email")}, function() {console.log("timeout!")}))`
      * 
      * @param {string} email
-     * @param {number} timeout_per_2s
+     * @param {number | undefined} timeout_per_2s
      * @param {Function | undefined} mail_sent_cb
      * @param {Function | undefined} timeout_cb
      * @returns {Promise<string>}
     */
-    generate_token(email, timeout_per_2s = 30, mail_sent_cb = null, timeout_cb = null) {
+    generate_token_auto(email, timeout_per_2s = 30, mail_sent_cb = null, timeout_cb = null) {
         let current_timer = 1;
         return new Promise(async resolve => {
             let res;
@@ -3623,7 +3644,7 @@ class CAINode extends EventEmitter {
             if (!mail_sent_cb) console.log("Please check your email.");
             else mail_sent_cb();
             while(1) {
-                await wait(2000)
+                await wait(1000)
                 try {
                     res = await (await https_fetch(`https://character.ai/login/polling/?uuid=${polling_uuid}`, "GET")).json()
                 } catch(_) {_}
@@ -3647,6 +3668,30 @@ class CAINode extends EventEmitter {
             }
             resolve(res);
         })
+    }
+    
+    /**
+     * Generate your Character.AI Token putting the Character.AI verify link.  
+     * @param {string} verify_link
+     */
+    async generate_token_manual(verify_link) {
+        if (typeof verify_link != "string") throw "Please input the correct verify link."
+
+        let auth_parser = (await (await https_fetch(verify_link)).text()).match(/https:\/\/auth\.character\.ai\/__\/auth\/action\?[^"]+/g)
+        if (auth_parser == null) throw "Character.AI Verify code link is invalid or expired!"
+        else auth_parser = auth_parser[0].split('\\u0026');
+
+        const oob_code = auth_parser[1].slice(8)
+        const email = auth_parser[3].slice(auth_parser[3].indexOf("email%3D") + 8, auth_parser[3].indexOf("%26isApp%3Dtrue%26continue%3D%252F")).replaceAll("%252540", "@")
+
+        let res = (await (await https_fetch("https://identitytoolkit.googleapis.com/v1/accounts:signInWithEmailLink?key=AIzaSyAbLy_s6hJqVNr2ZN0UHHiCbJX1X8smTws", "POST", {
+            "Content-Type": "application/json"
+        }, JSON.stringify({"email": email,"oobCode": oob_code}))).json()).idToken
+        res = (await (await https_fetch("https://plus.character.ai/dj-rest-auth/google_idp/", "POST", {
+            "Content-Type": "application/json"
+        }, JSON.stringify({"id_token":res}))).json()).key
+
+        return res;
     }
 
     /**
