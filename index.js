@@ -1,6 +1,5 @@
 import WebSocket from "ws";
 import EventEmitter from "node:events";
-import { AudioResampler } from "@livekit/rtc-node";
 const textDecoder = new TextDecoder()
 
 async function load() {
