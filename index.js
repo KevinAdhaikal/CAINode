@@ -273,6 +273,35 @@ class User_Class {
     */
 
     /**
+     * @typedef {Object} UserBirthdayStatus
+     * @property {string} status
+     * @property {string} message
+     * @property {boolean} date_of_birth_collected
+     * @property {boolean} meets_age_requirements
+    */
+
+    /**
+     * @typedef {Object} CreatedCharactersUserInfo
+     * @property {Object[]} characters
+     * @property {string} characters[].external_id
+     * @property {string} characters[].title
+     * @property {string} characters[].greeting
+     * @property {string} characters[].description
+     * @property {string} characters[].definition
+     * @property {string} characters[].avatar_file_name
+     * @property {string} characters[].visibility
+     * @property {boolean} characters[].copyable
+     * @property {string} characters[].participant__name
+     * @property {number} characters[].participant__num_interactions
+     * @property {number} characters[].user__id
+     * @property {string} characters[].user__username
+     * @property {boolean} characters[].img_gen_enabled
+     * @property {string} characters[].default_voice_id
+     * @property {number} characters[].remix_count
+     * @property {number} characters[].upvotes
+    */
+
+    /**
      * @type {CAINode_Property}
      */
     #prop;
@@ -601,6 +630,34 @@ class User_Class {
     async clear_muted_words() {
         if (!this.#prop.token) throw "Please login first."
         return await this.update_settings({"outputStylePreferences":{"bannedWords":[]}})
+    }
+
+    /** 
+     * check if the user age meets agreement (17+ i guess?)  
+     *   
+     * Example: `await library_name.user.birthday_status()`
+     * 
+     * @returns {Promise<{UserBirthdayStatus}>}
+     */
+    async birthday_status() {
+        if (!this.#prop.token) throw "Please login first."
+        return await (await https_fetch("https://plus.character.ai/chat/user/get-user-birthday-status/", "GET", {
+            "Authorization": `Token ${this.#prop.token}`
+        })).json()
+    }
+
+    /**
+     * Get all list characters created by this current user.  
+     *   
+     * Example: `await library_name.user.get_characters_created()`
+     * 
+     * @returns {Promise<CreatedCharactersUserInfo>}
+     */
+    async get_characters_created() {
+        if (!this.#prop.token) throw "Please login first."
+        return await (await https_fetch("https://neo.character.ai/character/v1/get_characters_created_by_user", "GET", {
+            "Authorization": `Token ${this.#prop.token}`
+        })).json()
     }
 }
 
@@ -1061,18 +1118,18 @@ class Explore_Class {
     }
 
     /**
-     * Get a list of character by tags.  
+     * Get a list of characters by tags.  
      *   
      * Example: `await library_name.explore.character_with_tags()`
      * 
-     * @param {string} tags
+     * @param {string} tag
      * @returns {Promise<{tags: String[]}>}
      */
-    async character_with_tags(tags) {
+    async characters_with_tag(tag) {
         if (!this.#prop.token) throw "Please login first."
-        if (typeof tags != "string") throw "Parameter 'name' is inavlid. Please fill it correctly."
+        if (typeof tag != "string") throw "Parameter 'name' is inavlid. Please fill it correctly."
         
-        return await (await https_fetch(`https://neo.character.ai/recommendation/v1/characters_with_tag/${tags}`, "GET", {
+        return await (await https_fetch(`https://neo.character.ai/recommendation/v1/characters_with_tag/${tag}`, "GET", {
             "Authorization": `Token ${this.#prop.token}`
         })).json()
     }
@@ -1104,18 +1161,28 @@ class Character_Class {
     /**
      * @typedef {Object} CharactersSearchInfo
      * @property {Object[]} characters
-     * @property {string} characters[].document_id
-     * @property {string} characters[].external_id
      * @property {string} characters[].title
      * @property {string} characters[].greeting
+     * @property {string} characters[].description
+     * @property {string} characters[].external_id
+     * @property {number} characters[].priority
      * @property {string} characters[].avatar_file_name
      * @property {string} characters[].visibility
+     * @property {string} characters[].tag_id
+     * @property {string} characters[].tag
+     * @property {number} characters[].created_at
+     * @property {number} characters[].updated_at
+     * @property {number} characters[].num_likes
+     * @property {number} characters[].num_interactions_last_day
+     * @property {number} characters[].score
      * @property {string} characters[].participant__name
-     * @property {number} characters[].participant__num_interactions
      * @property {string} characters[].user__username
-     * @property {number} characters[].priority
-     * @property {number} characters[].search_score
-     * @property {string} request_id
+     * @property {number} characters[].participant__num_interactions
+     * @property {string} uuid
+     * @property {Object[]} tags
+     * @property {string} tags.id
+     * @property {string} tags.name 
+     * @property {boolean} safety_filtered
     */
 
     /**
@@ -1312,6 +1379,26 @@ class Character_Class {
         }, JSON.stringify({
             "external_id": char_id
         }))).json()
+    }
+    /**
+     * 
+     * @param {String[] | string} char_ids
+     * @returns {Promise<>}
+     */
+    async tags_info(char_ids) {
+        if (!this.#prop.token) throw "Please login first.";
+
+        if (typeof char_ids == "string") {
+            return await (await https_fetch("https://neo.character.ai/character/v1/characters_tags_info", "POST", {
+                'Authorization': `Token ${this.#prop.token}`,
+                "Content-Type": "application/json"
+            }, JSON.stringify({"external_ids": [char_ids]}))).json()
+        } else if (Array.isArray(char_ids)) {
+            return await (await https_fetch("https://neo.character.ai/character/v1/characters_tags_info", "POST", {
+                'Authorization': `Token ${this.#prop.token}`,
+                "Content-Type": "application/json"
+            }, JSON.stringify({"external_ids": char_ids}))).json()
+        } else throw "Paramater 'char_ids' type must be string or array."
     }
 
     /**
