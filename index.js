@@ -320,14 +320,17 @@ class User_Class {
      *   
      * Example: `await library_name.user.search("Name user")`
      * 
+     * @template {"popular" | "followers"} T
      * @param {string} name
+     * @param {T | "" | undefined} sorted_by
      * @returns {Promise<UserSearch>}
     */
-    async search(name) {
+    async search(name, sorted_by) {
         if (!this.#prop.token) throw "Please login first."
-        if (!name) throw "Parameter named 'name' cannot be empty."
+        if (typeof name != "string") throw "Parameter 'name' is inavlid. Please fill it correctly."
+        if (typeof sorted_by != "string") throw "Parameter 'sorted_by' is invalid. Please fill it correctly."
 
-        return await (await https_fetch(`https://neo.character.ai/search/v1/creator?query=${name}`, "GET", {
+        return await (await https_fetch(`https://neo.character.ai/search/v1/creator?query=${name}&sortedBy=${sorted_by}`, "GET", {
             "Authorization": `Token ${this.#prop.token}`
         })).json();
     }
@@ -1044,6 +1047,37 @@ class Explore_Class {
     }
 
     /**
+     * Get a list of discovery tags by the Character.AI server.  
+     *   
+     * Example: `await library_name.explore.discovery_tags()`
+     * 
+     * @returns {Promise<{tags: String[]}>}
+     */
+    async discovery_tags() {
+        if (!this.#prop.token) throw "Please login first."
+        return await (await https_fetch("https://neo.character.ai/recommendation/v1/user", "GET", {
+            "Authorization": `Token ${this.#prop.token}`
+        })).json()
+    }
+
+    /**
+     * Get a list of character by tags.  
+     *   
+     * Example: `await library_name.explore.character_with_tags()`
+     * 
+     * @param {string} tags
+     * @returns {Promise<{tags: String[]}>}
+     */
+    async character_with_tags(tags) {
+        if (!this.#prop.token) throw "Please login first."
+        if (typeof tags != "string") throw "Parameter 'name' is inavlid. Please fill it correctly."
+        
+        return await (await https_fetch(`https://neo.character.ai/recommendation/v1/characters_with_tag/${tags}`, "GET", {
+            "Authorization": `Token ${this.#prop.token}`
+        })).json()
+    }
+
+    /**
      * Get a list of characters from the character category exploration.  
      *   
      * Example: `await library_name.explore.character_categories()`
@@ -1082,18 +1116,6 @@ class Character_Class {
      * @property {number} characters[].priority
      * @property {number} characters[].search_score
      * @property {string} request_id
-    */
-
-    /**
-     * @typedef {Object} CharactersSearchSuggestInfo
-     * @property {Object[]} characters
-     * @property {string} characters[].document_id
-     * @property {string} characters[].external_id
-     * @property {string} characters[].name
-     * @property {string} characters[].avatar_file_name
-     * @property {string} characters[].num_interactions
-     * @property {string} characters[].title
-     * @property {string} characters[].greeting
     */
 
     /**
@@ -1233,27 +1255,43 @@ class Character_Class {
      *   
      * Example: `await library_name.character.search("Name")`
      * 
+     * @template {"relevance" | "likes" | "popular" | "newest"} T
      * @param {string} name
+     * @param {T | "" | undefined} sorted_by
      * @returns {Promise<CharactersSearchInfo>}
     */
-    async search(name) {
+    async search(name, sorted_by = "relevance") {
         if (!this.#prop.token) throw "Please login first."
-        return await (await https_fetch(`https://plus.character.ai/chat/characters/search/?query=${name}`, "GET", {
+        if (typeof name != "string") throw "Parameter 'name' is inavlid. Please fill it correctly."
+        if (typeof sorted_by != "string") throw "Parameter 'sorted_by' is invalid. Please fill it correctly."
+        
+        return await (await https_fetch(`https://neo.character.ai/search/v1/character?query=${name}&sortedBy=${sorted_by}`, "GET", {
             'Authorization': `Token ${this.#prop.token}`
         })).json()
     }
 
     /**
-     * Search character by name and suggested by Character.AI Server.  
-     *   
-     * Example: `await library_name.character.search_suggest("Query")`
+     * Get popular search.  
      * 
-     * @param {string} name
-     * @returns {Promise<CharactersSearchSuggestInfo>}
+     * @returns {Promise<String[]>}
     */
-    async search_suggest(name) {
+    async popular_search() {
         if (!this.#prop.token) throw "Please login first."
-        return await (await https_fetch(`https://plus.character.ai/chat/characters/suggest/?query=${name}`, "GET", {
+
+        return await (await https_fetch(`https://neo.character.ai/search/v1/query/popular`, "GET", {
+            'Authorization': `Token ${this.#prop.token}`
+        })).json()
+    }
+
+    /**
+     * Get trending search.  
+     * 
+     * @returns {Promise<String[]>}
+    */
+    async trending_search() {
+        if (!this.#prop.token) throw "Please login first."
+        
+        return await (await https_fetch(`https://neo.character.ai/search/v1/query/trending`, "GET", {
             'Authorization': `Token ${this.#prop.token}`
         })).json()
     }
@@ -2912,6 +2950,42 @@ class Chat_Class {
     }
 }
 
+class Notification_Class {
+    /**
+     * @typedef {Object[]} NotificationInfo
+     * @property {string} id
+     * @property {string} channel
+     * @property {string} sent_at
+     * @property {string} title
+     * @property {string} body
+     * @property {string} user_status
+     * @property {Object} payload
+     * @property {string} payload.type
+     * @property {string} payload.id
+     * @property {string} payload.notification_id
+    */
+    
+    #prop;
+    constructor(prop) {
+        this.#prop = prop;
+    }
+
+    /**
+     * Get all of the history notification.  
+     *   
+     * Example: `await library_name.notification.history()`
+     * 
+     * @returns {Promise<NotificationInfo>}
+     */
+    async history() {
+        if (!this.#prop.token) throw "Please login first.";
+        
+        return await (await https_fetch("https://neo.character.ai/notifications/history", "GET", {
+            'Authorization': `Token ${this.#prop.token}`
+        })).json();
+    }
+}
+
 class Livekit_Class extends EventEmitter {
     /**
      * Livekit variable list (when you're connected to the character voice)
@@ -3481,7 +3555,6 @@ class CAINode extends EventEmitter {
      * - `votes_array()`: Get character vote information in array.  
      * - `vote()`: Used for vote the character.  
      * - `search()`: Search for a character by name.  
-     * - `search_suggest()`: Search character by name and suggested by Character.AI Server.  
      * - `info()`: Get detailed information about characters.  
      * - `recent_list()`: Get a list of recent chat activity.  
      * - `connect()`: Connect client to character chat.  
@@ -3535,6 +3608,13 @@ class CAINode extends EventEmitter {
      * - `rename_conversation()`: Rename your conversation, and this function works only for Single character chat.
     */
     chat = new Chat_Class(this.#prop) // Chat Class
+
+    /**
+     * Notification function list  
+     *   
+     * - `history()`: Get all of the history notification.
+     */
+    notification = new Notification_Class(this.#prop) // Notification Class
 
     /**
      * Voice function list  
@@ -3608,9 +3688,10 @@ class CAINode extends EventEmitter {
      * @param {string} email
     */
     async send_code(email) {
-        await https_fetch("https://character.ai/api/trpc/auth.login?batch=1", "POST", {
+        let abcd = await https_fetch("https://character.ai/api/trpc/auth.login?batch=1", "POST", {
             "Content-Type": "application/json"
         }, JSON.stringify({"0":{"json":{"email":email}}}))
+        console.log(await abcd.text())
     }
 
     /**
