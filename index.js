@@ -1381,9 +1381,12 @@ class Character_Class {
         }))).json()
     }
     /**
+     * Get tags info by Character ID (i guess?)  
+     *   
+     * Example: `await library_name.character.tags_info()`
      * 
      * @param {String[] | string} char_ids
-     * @returns {Promise<>}
+     * @returns {Promise<{ranked_tags: String[], character_id_to_tags: String[]}>}
      */
     async tags_info(char_ids) {
         if (!this.#prop.token) throw "Please login first.";
@@ -3631,7 +3634,9 @@ class CAINode extends EventEmitter {
      * - `for_you()`: Get a list of characters recommended by the Character.AI server.  
      * - `character_categories()`: Get the list of characters from the character category exploration.  
      * - `featured_voices()`: Get a list of featured voices.  
-     * - `simillar_char()`: Get a list of simillar character from ID character.
+     * - `simillar_char()`: Get a list of simillar character from ID character.  
+     * - `discovery_tags()`: Get a list of discovery tags by the Character.AI server.  
+     * - `characters_with_tag()`: Get a list of characters by tags.
     */
     explore = new Explore_Class(this.#prop); // Explore Class
 
@@ -3642,7 +3647,10 @@ class CAINode extends EventEmitter {
      * - `votes_array()`: Get character vote information in array.  
      * - `vote()`: Used for vote the character.  
      * - `search()`: Search for a character by name.  
+     * - `popular_search()`: Get popular search.  
+     * - `trending_search()`: Get trending search.  
      * - `info()`: Get detailed information about characters.  
+     * - `tags_info()`: et tags info by Character ID. (i guess?)  
      * - `recent_list()`: Get a list of recent chat activity.  
      * - `connect()`: Connect client to character chat.  
      * - `disconnect()`: Disconnecting client from character chat.  
@@ -3654,6 +3662,7 @@ class CAINode extends EventEmitter {
      * - `edit_message()`: Edit the character message.  
      * - `replay_tts()`: Generate text messages from character to voice audio.  
      * - `current_voice()`: Get character current voice info.  
+     * - `get_category()`: Get category used of the character.  
      * - `about()`: Get detailed information of the character about.  
      * - `info_detailed()`: Get detailed of the character. but, it will give you a FULL detailed of the Character, including character definition.
     */
