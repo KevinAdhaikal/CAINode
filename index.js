@@ -3784,10 +3784,9 @@ class CAINode extends EventEmitter {
      * @param {string} email
     */
     async send_code(email) {
-        let abcd = await https_fetch("https://character.ai/api/trpc/auth.login?batch=1", "POST", {
+        await https_fetch("https://character.ai/api/trpc/auth.login?batch=1", "POST", {
             "Content-Type": "application/json"
         }, JSON.stringify({"0":{"json":{"email":email}}}))
-        console.log(await abcd.text())
     }
 
     /**
