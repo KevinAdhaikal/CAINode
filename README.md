@@ -1,18 +1,50 @@
 # CAINode  
-A lighweight Unofficial Character.AI API in Node/Deno/Bun JS, It does not require a puppeteer to interact with c.ai because the interaction is conducted with websocket and HTTPS Request (fetch).<br><br>
-CAINode is now using ESM. Please read at [Getting Started](#getting-started) first before using CAINode.<br><br>
-![GitHub commit activity (branch)](https://img.shields.io/github/commit-activity/t/kevinadhaikal/cainode?logo=github&cacheSeconds=12000&style=for-the-badge) ![GitHub last commit (by committer)](https://img.shields.io/github/last-commit/kevinadhaikal/cainode?style=for-the-badge) ![GitHub repo size](https://img.shields.io/github/repo-size/kevinadhaikal/cainode?logo=github&style=for-the-badge&link=https%3A%2F%2Fgithub.com%2Fkevinadhaikal%2Fcainode) ![GitHub package.json version (branch)](https://img.shields.io/github/package-json/v/kevinadhaikal/cainode/main?style=for-the-badge&logo=github)
+**The Lightweight Unofficial Character.AI API for Node.js / Deno / Bun**
 
-# Features
-- Lightweight library (WebSocket and Fetch)
-- Easy to use
-- Almost all Character.AI Support
-  - Voice Call
-  - Single/Group chat
-  - Image Generate
-  - User
-  - Persona
-  - Explore list
+Access Character.AI via pure JavaScript – **no Puppeteer**, **no browser automation**, just WebSocket + HTTPS.  
+Built for developers who want to **chat with Character.AI programmatically** using modern JavaScript runtimes (Node, Deno, Bun).
+
+> ⭐️ Easy-to-use API | 🔥 Lightweight & Fast | 💬 Supports Streaming & History | 🧠 Designed for Bots, CLI & Automation
+
+---
+
+[![NPM Version](https://img.shields.io/npm/v/cainode?style=for-the-badge&logo=npm)](https://www.npmjs.com/package/cainode)
+[![GitHub Stars](https://img.shields.io/github/stars/kevinadhaikal/cainode?style=for-the-badge&logo=github)](https://github.com/kevinadhaikal/cainode)
+[![GitHub Repo Size](https://img.shields.io/github/repo-size/kevinadhaikal/cainode?style=for-the-badge&logo=github)](https://github.com/kevinadhaikal/cainode)
+[![Last Commit](https://img.shields.io/github/last-commit/kevinadhaikal/cainode?style=for-the-badge&logo=git)](https://github.com/kevinadhaikal/cainode)
+[![Commit Activity](https://img.shields.io/github/commit-activity/t/kevinadhaikal/cainode?style=for-the-badge&logo=github)](https://github.com/kevinadhaikal/cainode)
+
+---
+
+## 🚀 Features
+CAINode supports nearly **all Character.AI features** – designed for both simple and advanced use cases:
+
+### ⚙️ Core Features
+- ✅ **Lightweight** – No Puppeteer, no headless browser. Uses native WebSocket + Fetch
+- ✅ **Cross-runtime** – Works with **Node.js**, **Deno**, and **Bun**
+- ✅ **Fully Async** – Promise-based, easy integration
+- ✅ **Streaming Chat Support** – Typing-style responses, streamed token by token
+
+### 💬 Chat Support
+- 🧠 **Single Chat** – Chat with any character
+- 👥 **Group Chat** – Chat with multiple characters in one conversation
+- 📝 **Chat History** – Fetch previous messages with metadata
+- 🎤 **Voice Call Support** – Full support for voice interactions with characters
+
+### 🧩 Character & User Control
+- 🔍 **Search Characters** – Explore, get trending, featured, or searched characters
+- 👤 **User Profiles** – Fetch profile data, persona, and more
+- 🧠 **Persona Management** – Edit and apply custom persona to your characters
+
+### 🖼️ Media & Generation
+- 🖼️ **Image Generation** – Send prompts, receive image replies
+- 🎨 **Image Uploading Support** – Upload image to use in messages
+
+---
+
+### 💥 Bonus
+- ⚡ **Blazingly Fast** – Low latency communication via WebSocket
+- 📚 **Typed (with JSDoc)** – Great autocomplete in editors like VSCode
 
 # Table of contents
 - [Getting Started](#getting-started)
