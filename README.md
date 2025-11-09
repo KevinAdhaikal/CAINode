@@ -36,7 +36,6 @@ CAINode is now using ESM. Please read at [Getting Started](#getting-started) fir
    - [user.followers_list_name](#userfollowers_list_name) - Get account followers name list.
    - [user.follow](#userfollow) - Follow user account.
    - [user.unfollow](#userunfollow) - Unfollow user account.
-   - [user.search](#usersearch) - Search user by name.
    - [user.liked_character_list](#userliked_character_list) - Get a list of characters that the account likes.
    - [user.add_muted_words](#useradd_muted_words) - Add muted words.
    - [user.remove_muted_words](#userremove_muted_words) - Remove muted words.
@@ -44,6 +43,16 @@ CAINode is now using ESM. Please read at [Getting Started](#getting-started) fir
 - [Image Function List](#image-function-list)
    - [image.generate_avatar](#imagegenerate_avatar) - Generate avatar image using prompt.
    - [image.generate_image](#imagegenerate_image) - Generate image using prompt.
+- [Search Function List](#search-function-list)
+   - [search.list_tags](#searchlist_tags) - Get list of tags.
+   - [search.users](#searchusers) - Search users by name.
+   - [search.scenes](#searchscenes) - Search scenes by query.
+   - [search.characters](#searchcharacters) - Search for a characters by name.
+   - [search.voices](#searchvoices) - Search for a voices by name.
+   - [search.popular](#searchpopular) - Get popular search.
+   - [search.trending](#searchtrending) - Get trending search.
+   - [search.autocomplete](#searchautocomplete) - Get autocomplete search.
+   - [search.languages](#searchlanguages) - Get languages list.
 - [Persona Function List](#persona-function-list)
    - [persona.create](#personacreate) - Create your personality for your character.
    - [persona.set_default](#personaset_default) - Set your default personality specifically.
@@ -62,8 +71,6 @@ CAINode is now using ESM. Please read at [Getting Started](#getting-started) fir
    - [character.votes](#charactervotes) - Get character vote information.
    - [character.votes_array](#charactervotes_array) - Get character vote information in array.
    - [character.vote](#charactervote) - Used for vote the character.
-   - [character.search](#charactersearch) - Search for a character by name.
-   - [character.search_suggest](#charactersearch_suggest) - Search character by name and suggested by Character.AI Server.
    - [character.info](#characterinfo) - Get detailed information about characters.
    - [character.recent_list](#characterrecent_list) - Get a list of recent chat activity.
    - [character.connect](#characterconnect) - Connect client to character chat.
@@ -109,7 +116,6 @@ CAINode is now using ESM. Please read at [Getting Started](#getting-started) fir
 - [Voice Function List](#voice-function-list)
    - [voice.user_created_list](#voiceuser_created_list) - Get list of user created voice information.
    - [voice.info](#voiceinfo) - Get a voice information.
-   - [voice.search](#voicesearch) - Search for a voice by name.
    - [voice.connect](#voiceconnect) - Connect to voice character chat, and this function works only for single character chat.
 - [Livekit Function List](#livekit-function-list) - (when you're connected to the character voice)
    - [voice.connect().is_character_speaking](#voiceconnectis_character_speaking) - Check is Character is speaking or not.
@@ -397,18 +403,6 @@ To install CAINode, you can simply do
 
    [Back to the Table of contents](#table-of-contents)
 
-- ## user.search()
-   Search user by name.
-
-   ```js
-   await client.user.search();
-   ```
-   | Param | Require | Type | Description | 
-   | --- | --- | --- | --- | 
-   | username | `true` | `string` | Target Character.AI username account. |
-
-   [Back to the Table of contents](#table-of-contents)
-
 - ## user.liked_character_list()
    Get a list of characters that the account likes.
 
@@ -501,8 +495,133 @@ To install CAINode, you can simply do
 
    [Back to the Table of contents](#table-of-contents)
 
+# Search Function List
+> This class contains functions about the Search on Character.AI Server.
+
+- ## search.list_tags()
+   Get list of tags.
+
+   ```js
+   await client.search.list_tags();
+   ```
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | none | `false` | `null` | - |
+
+   [Back to the Table of contents](#table-of-contents)
+
+
+- ## search.users()
+   Search users by name.
+
+   ```js
+   await library_name.search.users("Name user", "popular"); // sorted by popular
+   ```
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | name | `true` | `string` | Name user to search |
+   | sorted_by | `true` | `string` | Search sorted by? |
+
+   [Back to the Table of contents](#table-of-contents)
+
+
+- ## search.scenes()
+   Search scenes by query.
+
+   ```js
+   await library_name.search.scenes("Query");
+   ```
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | query | `true` | `string` | Search scenes by Query |
+
+
+   [Back to the Table of contents](#table-of-contents)
+
+
+- ## search.characters()
+   Search for a character by name or query.
+
+   ```js
+   await library_name.search.characters("Character Name")
+   ```
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | name | `true` | `string` | Search queries to find characters. |
+   | sorted_by | `true` | `string` | Search sorted by? |
+
+   [Back to the Table of contents](#table-of-contents)
+
+
+- ## search.voices()
+   Search for a voices by name.
+
+   ```js
+   await library_name.search.voices("Name voice")
+   ```
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | name | `true` | `string` | Search queries to find voices. |
+
+   [Back to the Table of contents](#table-of-contents)
+
+
+- ## search.popular()
+   Get popular search.
+
+   ```js
+   await library_name.search.popular()
+   ```
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | none | `false` | `null` | - |
+
+   [Back to the Table of contents](#table-of-contents)
+
+
+- ## search.trending()
+   Get trending search.
+
+   ```js
+   await library_name.search.trending()
+   ```
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | none | `false` | `null` | - |
+
+   [Back to the Table of contents](#table-of-contents)
+
+
+- ## search.autocomplete()
+   Get autocomplete search.
+
+   ```js
+   await library_name.search.autocomplete("Search")
+   ```
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | query | `true` | `string` | Get autocomplete search by Query |
+
+   [Back to the Table of contents](#table-of-contents)
+
+
+- ## search.languages()
+   Get languages list.
+
+   ```js
+   await library_name.search.languages("")
+   ```
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | none | `false` | `null` | - |
+
+   [Back to the Table of contents](#table-of-contents)
+
+
 # Persona Function List
 > This class contains variables and methods about the Persona requirement. For example: Create/Edit/Delete Persona, Set persona, Get information about persona.
+
+
 - ## persona.create()
    Create your personality for your character.
 
@@ -658,7 +777,7 @@ To install CAINode, you can simply do
    [Back to the Table of contents](#table-of-contents)
 
 # Character Function List
-> This class contains functions about the Character requirement (Single Character, not Group Chat). Example: Sending message to Character, Searching character, botes character, and etc about Character.
+> This class contains functions about the Character requirement (Single Character, not Group Chat). Example: Sending message to Character, votes character, and etc about Character.
 
 - ## character.votes()
    Get character vote information.
@@ -696,32 +815,6 @@ To install CAINode, you can simply do
    | --- | --- | --- | --- | 
    | character_id | `true` | `string` | The character id you are aiming for. |
    | vote | `true` | `boolean` | Character vote options, `true = like`, `false = dislike`, and `null = cancel` |
-
-   [Back to the Table of contents](#table-of-contents)
-
-
-- ## character.search()
-   Search for a character by name or query.
-
-   ```js
-   await client.character.search(name);
-   ```
-   | Param | Require | Type | Description |
-   | --- | --- | --- | --- | 
-   | name | `true` | `string` | Search queries to find characters. |
-
-   [Back to the Table of contents](#table-of-contents)
-
-
-- ## character.search_suggest()
-   Search character by name and suggested by Character.AI Server
-
-   ```js
-   await client.character.search_suggest(name);
-   ```
-   | Param | Require | Type | Description |
-   | --- | --- | --- | --- | 
-   | name | `true` | `string` | Character name query. |
 
    [Back to the Table of contents](#table-of-contents)
 
