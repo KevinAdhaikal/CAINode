@@ -451,6 +451,25 @@ class User_Class {
             "username":username ? username : this.#prop.user_data.user.user.username, "pageParam": page_param
         }))).json()
     }
+
+    /**
+     * Check are you following this user account or not.  
+     *   
+     * Example: `await library_name.user.following_check("Username")`
+     * 
+     * @param {string} username 
+     * @returns {Promise<{"followStatus": Record<string, boolean>}>}
+     */
+    async following_check(username) {
+        if (!this.#prop.token) throw "Please login first.";
+
+        return await (await https_fetch("https://neo.character.ai/external/users/following/check", "POST", {
+            "Authorization": `Token ${this.#prop.token}`,
+            "Content-Type": "application/json"
+        }, JSON.stringify({
+            "usernames_to_check": [username]
+        }))).json()
+    }
     
     /**
      * Get public user followers list.  
@@ -3125,6 +3144,23 @@ class Chat_Class {
             "name": name
         }))).json()
     }
+
+    /**
+     * i dont know what is this. but maybe this is for getting the facts of your conversation, i guess...?  
+     * if you know this thing, please lemme know or you can do pull request if you want to.  
+     *   
+     * Example: `await library_name.chat.conversation_facts("Chat ID")`
+     * 
+     * @param {string} chat_id
+     * @returns {Promise<{}>}
+     */
+    async conversation_facts(chat_id) {
+        if (!this.#prop.token) throw "Please login first.";
+
+        return await (await https_fetch(`https://neo.character.ai/chat/${chat_id}/conversation-facts`, "GET", {
+            'Authorization': `Token ${this.#prop.token}`,
+        })).json()
+    }
 }
 
 class Notification_Class {
@@ -3720,6 +3756,7 @@ class CAINode extends EventEmitter {
      * - `update_settings()`: Update user settings by your own settings.
      * - `public_following_list()`: Get public user following list.  
      * - `public_followers_list()`: Get public user followers list.  
+     * - `following_check()`: Check are you following this user account or not.  
      * - `following_list_name()`: Get account following name list.  
      * - `followers_list_name()`: Get account followers name list.  
      * - `follow()`: Follow user account.  
@@ -3921,9 +3958,9 @@ class CAINode extends EventEmitter {
      * Parameter Info  
      * - 1st parameter `email`: Target email you want to generate the token.
      * Example  
-     * - Without Timer: `console.log(await library_name.generate_token("your@email.com", 0))`  
-     * - With Timer: `console.log(await library_name.generate_token("your@email.com", 60))`
-     * - With callback: `console.log(await library_name.generate_token("your@email.com", 30, function() {console.log("Please check your email")}, function() {console.log("timeout!")}))`
+     * - Without Timer: `console.log(await library_name.generate_token_auto("your@email.com", 0))`  
+     * - With Timer: `console.log(await library_name.generate_token_auto("your@email.com", 60))`
+     * - With callback: `console.log(await library_name.generate_token_auto("your@email.com", 30, function() {console.log("Please check your email")}, function() {console.log("timeout!")}))`
      * 
      * @param {string} email
      * @param {number | undefined} timeout_per_2s

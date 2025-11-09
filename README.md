@@ -1,18 +1,50 @@
 # CAINode  
-A lighweight Unofficial Character.AI API in Node/Deno/Bun JS, It does not require a puppeteer to interact with c.ai because the interaction is conducted with websocket and HTTPS Request (fetch).<br><br>
-CAINode is now using ESM. Please read at [Getting Started](#getting-started) first before using CAINode.<br><br>
-![GitHub commit activity (branch)](https://img.shields.io/github/commit-activity/t/kevinadhaikal/cainode?logo=github&cacheSeconds=12000&style=for-the-badge) ![GitHub last commit (by committer)](https://img.shields.io/github/last-commit/kevinadhaikal/cainode?style=for-the-badge) ![GitHub repo size](https://img.shields.io/github/repo-size/kevinadhaikal/cainode?logo=github&style=for-the-badge&link=https%3A%2F%2Fgithub.com%2Fkevinadhaikal%2Fcainode) ![GitHub package.json version (branch)](https://img.shields.io/github/package-json/v/kevinadhaikal/cainode/main?style=for-the-badge&logo=github)
+**The Lightweight Unofficial Character.AI API for Node.js / Deno / Bun**
 
-# Features
-- Lightweight library (WebSocket and Fetch)
-- Easy to use
-- Almost all Character.AI Support
-  - Voice Call
-  - Single/Group chat
-  - Image Generate
-  - User
-  - Persona
-  - Explore list
+Access Character.AI via pure JavaScript – **no Puppeteer**, **no browser automation**, just WebSocket + HTTPS.  
+Built for developers who want to **chat with Character.AI programmatically** using modern JavaScript runtimes (Node, Deno, Bun).
+
+> ⭐️ Easy-to-use API | 🔥 Lightweight & Fast | 💬 Supports Streaming & History | 🧠 Designed for Bots, CLI & Automation
+
+---
+
+[![NPM Version](https://img.shields.io/npm/v/cainode?style=for-the-badge&logo=npm)](https://www.npmjs.com/package/cainode)
+[![GitHub Stars](https://img.shields.io/github/stars/kevinadhaikal/cainode?style=for-the-badge&logo=github)](https://github.com/kevinadhaikal/cainode)
+[![GitHub Repo Size](https://img.shields.io/github/repo-size/kevinadhaikal/cainode?style=for-the-badge&logo=github)](https://github.com/kevinadhaikal/cainode)
+[![Last Commit](https://img.shields.io/github/last-commit/kevinadhaikal/cainode?style=for-the-badge&logo=git)](https://github.com/kevinadhaikal/cainode)
+[![Commit Activity](https://img.shields.io/github/commit-activity/t/kevinadhaikal/cainode?style=for-the-badge&logo=github)](https://github.com/kevinadhaikal/cainode)
+
+---
+
+## 🚀 Features
+CAINode supports nearly **all Character.AI features** – designed for both simple and advanced use cases:
+
+### ⚙️ Core Features
+- ✅ **Lightweight** – No Puppeteer, no headless browser. Uses native WebSocket + Fetch
+- ✅ **Cross-runtime** – Works with **Node.js**, **Deno**, and **Bun**
+- ✅ **Fully Async** – Promise-based, easy integration
+- ✅ **Streaming Chat Support** – Typing-style responses, streamed token by token
+
+### 💬 Chat Support
+- 🧠 **Single Chat** – Chat with any character
+- 👥 **Group Chat** – Chat with multiple characters in one conversation
+- 📝 **Chat History** – Fetch previous messages with metadata
+- 🎤 **Voice Call Support** – Full support for voice interactions with characters
+
+### 🧩 Character & User Control
+- 🔍 **Search Characters** – Explore, get trending, featured, or searched characters
+- 👤 **User Profiles** – Fetch profile data, persona, and more
+- 🧠 **Persona Management** – Edit and apply custom persona to your characters
+
+### 🖼️ Media & Generation
+- 🖼️ **Image Generation** – Send prompts, receive image replies
+- 🎨 **Image Uploading Support** – Upload image to use in messages
+
+---
+
+### 💥 Bonus
+- ⚡ **Blazingly Fast** – Low latency communication via WebSocket
+- 📚 **Typed (with JSDoc)** – Great autocomplete in editors like VSCode
 
 # Table of contents
 - [Getting Started](#getting-started)
@@ -20,7 +52,8 @@ CAINode is now using ESM. Please read at [Getting Started](#getting-started) fir
    - [Example Usage](#example-usage) - Example Usage to using CAINode Library.
 - [Main Function List](#main-function-list)
    - [login](#login) - Start client initialization with login.
-   - [generate_token](#generate_token) - Generate your Character.AI Token by sending link verification to an email.
+   - [generate_token_auto](#generate_token_auto) - Generate your Character.AI Token by email. and you will get the token by just pressing the button when you receive the email.
+   - [ping](#ping) - Pings the Character AI server's health check endpoint.
    - [logout](#logout) - Logout from the Character.AI.
 - [User Function List](#user-function-list)
    - [user.info](#userinfo) - Get current information account.
@@ -32,6 +65,7 @@ CAINode is now using ESM. Please read at [Getting Started](#getting-started) fir
    - [user.public_info_array](#userpublic_info_array) - Get user public information account. same like `public_info()`, but this function have less information.
    - [user.public_following_list](#userpublic_following_list) - Get public user following list.
    - [user.public_followers_list](#userpublic_followers_list) - Get public user followers list.
+   - [user.following_check](#userfollowing_check) - Check are you following this user account or not.
    - [user.following_list_name](#userfollowing_list_name) - Get account following name list.
    - [user.followers_list_name](#userfollowers_list_name) - Get account followers name list.
    - [user.follow](#userfollow) - Follow user account.
@@ -113,6 +147,7 @@ CAINode is now using ESM. Please read at [Getting Started](#getting-started) fir
    - [chat.archive_conversation](#chatarchive_conversation) - Archive your conversation. This function works only for single character chat.
    - [chat.duplicate_conversation](#chatduplicate_conversation) - Duplicate your conversation. This function works only for single character chat.
    - [chat.rename_conversation](#chatrename_conversation) - Rename your conversation title. This function works only for single character chat.
+   - [chat.conversation_facts](#chatconversation_facts) - i dont know what is this. but maybe this is for getting the facts of your conversation, i guess...?
 - [Voice Function List](#voice-function-list)
    - [voice.user_created_list](#voiceuser_created_list) - Get list of user created voice information.
    - [voice.info](#voiceinfo) - Get a voice information.
@@ -124,6 +159,9 @@ CAINode is now using ESM. Please read at [Getting Started](#getting-started) fir
    - [voice.connect().is_speech](#voiceconnectis_speech) - this function checking is the PCM buffer frame is silence or not.
    - [voice.connect().interrupt_call](#voiceconnectinterrupt_call) - Interrupt while character talking.
    - [voice.connect().disconnect](#voiceconnectdisconnect) - Disconnect from voice character.
+- [Notification Function List](#notification-function-list)
+   - [notification.history](#notificationhistory) - Get all of the history notification.
+   - [notivication.history_v2](#notificationhistory_v2) - Get all of the history notification (Version 2)
 - [Issues](#issues)
 
 # Getting Started
@@ -179,27 +217,29 @@ To install CAINode, you can simply do
    | Token | `true` | `string` | Your Character.AI token used for client login. |
 
    [Back to the Table of contents](#table-of-contents)
-- ## generate_token()
-   Generate your Character.AI Token by sending link verification to an email.
+   
+- ## generate_token_auto()
+   Generate your Character.AI Token by email. and you will get the token by just pressing the button when you receive the email.
 
-   - Without timeout
-      ```js
-      await client.generate_token("your@email.com", 0);
-      ```
+   Parameter Info  
+   - 1st parameter `email`: Target email you want to generate the token.
+   - 2nd parameter: Timeout per 2 seconds (default 30, so it means = 60 seconds or 1 minute)<br>
+   You can disable the Timeout by set the parameter into 0.
 
-   - With timeout (per 2 seconds)
-      ```js
-      await client.generate_token("your@email.com", 30); // and it will end in 60 seconds.
-      ```
+   Example:
 
+   - Without Timer
+     ```js
+     console.log(await library_name.generate_token_auto("your@email.com", 0))
+     ```  
+   - With Timer
+     ```js
+     console.log(await library_name.generate_token_auto("your@email.com", 60))
+     ```
    - With callback
-      ```js
-      await client.generate_token("your@email.com", 30, function() {
-         console.log("Please check your email.")
-      }, function() {
-         console.log("Time is up! Please try again later.")
-      });
-      ```
+     ```js
+     console.log(await library_name.generate_token_auto("your@email.com", 30, function() {console.log("Please check your email")}, function() {console.log("timeout!")}))
+     ```
 
    | Param | Require | Type | Description |  
    | --- | --- | --- | --- |  
@@ -207,6 +247,18 @@ To install CAINode, you can simply do
    | timeout_per_2s | `false` | `number` | Max waiting for verification. (default = 30) |
    | mail_sent_cb | `false` | `Function` | Callback when the mail was sent to the target. |
    | timeout_cb | `false` | `Function` | Callback when the timeout was reached. |
+
+   [Back to the Table of contents](#table-of-contents)
+
+- ## ping()
+   Pings the Character AI server's health check endpoint.
+
+   ```js
+   await client.ping();
+   ```
+   | Param | Require | Type | Description |  
+   | --- | --- | --- | --- |  
+   | none | `false` | `null` | - |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -349,6 +401,19 @@ To install CAINode, you can simply do
    | --- | --- | --- | --- | 
    | username | `true` | `string` | Target Character.AI username account. |
    | page_param | `false` | `number` | Page parameter. |
+
+   [Back to the Table of contents](#table-of-contents)
+
+
+- ## user.following_check()
+   Check are you following this user account or not.
+
+   ```js
+   await client.user.following_check("Username");
+   ```
+   | Param | Require | Type | Description | 
+   | --- | --- | --- | --- | 
+   | username | `true` | `string` | Target Character.AI username account. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -1404,6 +1469,21 @@ To install CAINode, you can simply do
 
    [Back to the Table of contents](#table-of-contents)
 
+
+- ## chat.conversation_facts()
+   i dont know what is this. but maybe this is for getting the facts of your conversation, i guess...?<br>
+   if you know this thing, please lemme know or you can do pull request if you want to.
+
+   ```js
+   await client.chat.conversation_facts("Chat ID")
+   ```
+
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | chat_id | `true` | `string` | Chat ID message that you want to get a conversation facts. |
+
+   [Back to the Table of contents](#table-of-contents)
+
 # Voice Function List
 - ## voice.user_created_list()
    Get list of user created voice information.  
@@ -1517,6 +1597,7 @@ To install CAINode, you can simply do
 
    [Back to the Table of contents](#table-of-contents)
 
+
 # Livekit Function List
 - ## voice.connect().is_character_speaking
    Check is Character is speaking or not.
@@ -1618,6 +1699,35 @@ To install CAINode, you can simply do
    | none | `false` | `null` | - |
 
    [Back to the Table of contents](#table-of-contents)
+
+# Notification Function List
+- ## notification.history()
+   Get all of the history notification.
+
+   ```js
+   await library_name.notification.history()
+   ```
+
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | none | `false` | `null` | - |
+
+   [Back to the Table of contents](#table-of-contents)
+
+
+- ## notification.history_v2()
+   Get all of the history notification (Version 2).
+
+   ```js
+   await library_name.notification.history_v2()
+   ```
+
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | none | `false` | `null` | - |
+
+   [Back to the Table of contents](#table-of-contents)
+
 
 # Issues
 Feel free to open the issue, I hope this documentation can help you maximally and make it easier for you to use this package.
