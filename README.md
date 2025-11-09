@@ -52,7 +52,8 @@ CAINode supports nearly **all Character.AI features** – designed for both simp
    - [Example Usage](#example-usage) - Example Usage to using CAINode Library.
 - [Main Function List](#main-function-list)
    - [login](#login) - Start client initialization with login.
-   - [generate_token](#generate_token) - Generate your Character.AI Token by sending link verification to an email.
+   - [generate_token_auto](#generate_token_auto) - Generate your Character.AI Token by email. and you will get the token by just pressing the button when you receive the email.
+   - [ping](#ping) - Pings the Character AI server's health check endpoint.
    - [logout](#logout) - Logout from the Character.AI.
 - [User Function List](#user-function-list)
    - [user.info](#userinfo) - Get current information account.
@@ -64,11 +65,11 @@ CAINode supports nearly **all Character.AI features** – designed for both simp
    - [user.public_info_array](#userpublic_info_array) - Get user public information account. same like `public_info()`, but this function have less information.
    - [user.public_following_list](#userpublic_following_list) - Get public user following list.
    - [user.public_followers_list](#userpublic_followers_list) - Get public user followers list.
+   - [user.following_check](#userfollowing_check) - Check are you following this user account or not.
    - [user.following_list_name](#userfollowing_list_name) - Get account following name list.
    - [user.followers_list_name](#userfollowers_list_name) - Get account followers name list.
    - [user.follow](#userfollow) - Follow user account.
    - [user.unfollow](#userunfollow) - Unfollow user account.
-   - [user.search](#usersearch) - Search user by name.
    - [user.liked_character_list](#userliked_character_list) - Get a list of characters that the account likes.
    - [user.add_muted_words](#useradd_muted_words) - Add muted words.
    - [user.remove_muted_words](#userremove_muted_words) - Remove muted words.
@@ -76,6 +77,16 @@ CAINode supports nearly **all Character.AI features** – designed for both simp
 - [Image Function List](#image-function-list)
    - [image.generate_avatar](#imagegenerate_avatar) - Generate avatar image using prompt.
    - [image.generate_image](#imagegenerate_image) - Generate image using prompt.
+- [Search Function List](#search-function-list)
+   - [search.list_tags](#searchlist_tags) - Get list of tags.
+   - [search.users](#searchusers) - Search users by name.
+   - [search.scenes](#searchscenes) - Search scenes by query.
+   - [search.characters](#searchcharacters) - Search for a characters by name.
+   - [search.voices](#searchvoices) - Search for a voices by name.
+   - [search.popular](#searchpopular) - Get popular search.
+   - [search.trending](#searchtrending) - Get trending search.
+   - [search.autocomplete](#searchautocomplete) - Get autocomplete search.
+   - [search.languages](#searchlanguages) - Get languages list.
 - [Persona Function List](#persona-function-list)
    - [persona.create](#personacreate) - Create your personality for your character.
    - [persona.set_default](#personaset_default) - Set your default personality specifically.
@@ -94,8 +105,6 @@ CAINode supports nearly **all Character.AI features** – designed for both simp
    - [character.votes](#charactervotes) - Get character vote information.
    - [character.votes_array](#charactervotes_array) - Get character vote information in array.
    - [character.vote](#charactervote) - Used for vote the character.
-   - [character.search](#charactersearch) - Search for a character by name.
-   - [character.search_suggest](#charactersearch_suggest) - Search character by name and suggested by Character.AI Server.
    - [character.info](#characterinfo) - Get detailed information about characters.
    - [character.recent_list](#characterrecent_list) - Get a list of recent chat activity.
    - [character.connect](#characterconnect) - Connect client to character chat.
@@ -138,10 +147,10 @@ CAINode supports nearly **all Character.AI features** – designed for both simp
    - [chat.archive_conversation](#chatarchive_conversation) - Archive your conversation. This function works only for single character chat.
    - [chat.duplicate_conversation](#chatduplicate_conversation) - Duplicate your conversation. This function works only for single character chat.
    - [chat.rename_conversation](#chatrename_conversation) - Rename your conversation title. This function works only for single character chat.
+   - [chat.conversation_facts](#chatconversation_facts) - i dont know what is this. but maybe this is for getting the facts of your conversation, i guess...?
 - [Voice Function List](#voice-function-list)
    - [voice.user_created_list](#voiceuser_created_list) - Get list of user created voice information.
    - [voice.info](#voiceinfo) - Get a voice information.
-   - [voice.search](#voicesearch) - Search for a voice by name.
    - [voice.connect](#voiceconnect) - Connect to voice character chat, and this function works only for single character chat.
 - [Livekit Function List](#livekit-function-list) - (when you're connected to the character voice)
    - [voice.connect().is_character_speaking](#voiceconnectis_character_speaking) - Check is Character is speaking or not.
@@ -150,6 +159,9 @@ CAINode supports nearly **all Character.AI features** – designed for both simp
    - [voice.connect().is_speech](#voiceconnectis_speech) - this function checking is the PCM buffer frame is silence or not.
    - [voice.connect().interrupt_call](#voiceconnectinterrupt_call) - Interrupt while character talking.
    - [voice.connect().disconnect](#voiceconnectdisconnect) - Disconnect from voice character.
+- [Notification Function List](#notification-function-list)
+   - [notification.history](#notificationhistory) - Get all of the history notification.
+   - [notivication.history_v2](#notificationhistory_v2) - Get all of the history notification (Version 2)
 - [Issues](#issues)
 
 # Getting Started
@@ -205,27 +217,29 @@ To install CAINode, you can simply do
    | Token | `true` | `string` | Your Character.AI token used for client login. |
 
    [Back to the Table of contents](#table-of-contents)
-- ## generate_token()
-   Generate your Character.AI Token by sending link verification to an email.
+   
+- ## generate_token_auto()
+   Generate your Character.AI Token by email. and you will get the token by just pressing the button when you receive the email.
 
-   - Without timeout
-      ```js
-      await client.generate_token("your@email.com", 0);
-      ```
+   Parameter Info  
+   - 1st parameter `email`: Target email you want to generate the token.
+   - 2nd parameter: Timeout per 2 seconds (default 30, so it means = 60 seconds or 1 minute)<br>
+   You can disable the Timeout by set the parameter into 0.
 
-   - With timeout (per 2 seconds)
-      ```js
-      await client.generate_token("your@email.com", 30); // and it will end in 60 seconds.
-      ```
+   Example:
 
+   - Without Timer
+     ```js
+     console.log(await library_name.generate_token_auto("your@email.com", 0))
+     ```  
+   - With Timer
+     ```js
+     console.log(await library_name.generate_token_auto("your@email.com", 60))
+     ```
    - With callback
-      ```js
-      await client.generate_token("your@email.com", 30, function() {
-         console.log("Please check your email.")
-      }, function() {
-         console.log("Time is up! Please try again later.")
-      });
-      ```
+     ```js
+     console.log(await library_name.generate_token_auto("your@email.com", 30, function() {console.log("Please check your email")}, function() {console.log("timeout!")}))
+     ```
 
    | Param | Require | Type | Description |  
    | --- | --- | --- | --- |  
@@ -233,6 +247,18 @@ To install CAINode, you can simply do
    | timeout_per_2s | `false` | `number` | Max waiting for verification. (default = 30) |
    | mail_sent_cb | `false` | `Function` | Callback when the mail was sent to the target. |
    | timeout_cb | `false` | `Function` | Callback when the timeout was reached. |
+
+   [Back to the Table of contents](#table-of-contents)
+
+- ## ping()
+   Pings the Character AI server's health check endpoint.
+
+   ```js
+   await client.ping();
+   ```
+   | Param | Require | Type | Description |  
+   | --- | --- | --- | --- |  
+   | none | `false` | `null` | - |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -379,6 +405,19 @@ To install CAINode, you can simply do
    [Back to the Table of contents](#table-of-contents)
 
 
+- ## user.following_check()
+   Check are you following this user account or not.
+
+   ```js
+   await client.user.following_check("Username");
+   ```
+   | Param | Require | Type | Description | 
+   | --- | --- | --- | --- | 
+   | username | `true` | `string` | Target Character.AI username account. |
+
+   [Back to the Table of contents](#table-of-contents)
+
+
 - ## user.following_list_name()
    Get account following name list.
 
@@ -422,18 +461,6 @@ To install CAINode, you can simply do
 
    ```js
    await client.user.unfollow();
-   ```
-   | Param | Require | Type | Description | 
-   | --- | --- | --- | --- | 
-   | username | `true` | `string` | Target Character.AI username account. |
-
-   [Back to the Table of contents](#table-of-contents)
-
-- ## user.search()
-   Search user by name.
-
-   ```js
-   await client.user.search();
    ```
    | Param | Require | Type | Description | 
    | --- | --- | --- | --- | 
@@ -533,8 +560,133 @@ To install CAINode, you can simply do
 
    [Back to the Table of contents](#table-of-contents)
 
+# Search Function List
+> This class contains functions about the Search on Character.AI Server.
+
+- ## search.list_tags()
+   Get list of tags.
+
+   ```js
+   await client.search.list_tags();
+   ```
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | none | `false` | `null` | - |
+
+   [Back to the Table of contents](#table-of-contents)
+
+
+- ## search.users()
+   Search users by name.
+
+   ```js
+   await library_name.search.users("Name user", "popular"); // sorted by popular
+   ```
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | name | `true` | `string` | Name user to search |
+   | sorted_by | `true` | `string` | Search sorted by? |
+
+   [Back to the Table of contents](#table-of-contents)
+
+
+- ## search.scenes()
+   Search scenes by query.
+
+   ```js
+   await library_name.search.scenes("Query");
+   ```
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | query | `true` | `string` | Search scenes by Query |
+
+
+   [Back to the Table of contents](#table-of-contents)
+
+
+- ## search.characters()
+   Search for a character by name or query.
+
+   ```js
+   await library_name.search.characters("Character Name")
+   ```
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | name | `true` | `string` | Search queries to find characters. |
+   | sorted_by | `true` | `string` | Search sorted by? |
+
+   [Back to the Table of contents](#table-of-contents)
+
+
+- ## search.voices()
+   Search for a voices by name.
+
+   ```js
+   await library_name.search.voices("Name voice")
+   ```
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | name | `true` | `string` | Search queries to find voices. |
+
+   [Back to the Table of contents](#table-of-contents)
+
+
+- ## search.popular()
+   Get popular search.
+
+   ```js
+   await library_name.search.popular()
+   ```
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | none | `false` | `null` | - |
+
+   [Back to the Table of contents](#table-of-contents)
+
+
+- ## search.trending()
+   Get trending search.
+
+   ```js
+   await library_name.search.trending()
+   ```
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | none | `false` | `null` | - |
+
+   [Back to the Table of contents](#table-of-contents)
+
+
+- ## search.autocomplete()
+   Get autocomplete search.
+
+   ```js
+   await library_name.search.autocomplete("Search")
+   ```
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | query | `true` | `string` | Get autocomplete search by Query |
+
+   [Back to the Table of contents](#table-of-contents)
+
+
+- ## search.languages()
+   Get languages list.
+
+   ```js
+   await library_name.search.languages("")
+   ```
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | none | `false` | `null` | - |
+
+   [Back to the Table of contents](#table-of-contents)
+
+
 # Persona Function List
 > This class contains variables and methods about the Persona requirement. For example: Create/Edit/Delete Persona, Set persona, Get information about persona.
+
+
 - ## persona.create()
    Create your personality for your character.
 
@@ -690,7 +842,7 @@ To install CAINode, you can simply do
    [Back to the Table of contents](#table-of-contents)
 
 # Character Function List
-> This class contains functions about the Character requirement (Single Character, not Group Chat). Example: Sending message to Character, Searching character, botes character, and etc about Character.
+> This class contains functions about the Character requirement (Single Character, not Group Chat). Example: Sending message to Character, votes character, and etc about Character.
 
 - ## character.votes()
    Get character vote information.
@@ -728,32 +880,6 @@ To install CAINode, you can simply do
    | --- | --- | --- | --- | 
    | character_id | `true` | `string` | The character id you are aiming for. |
    | vote | `true` | `boolean` | Character vote options, `true = like`, `false = dislike`, and `null = cancel` |
-
-   [Back to the Table of contents](#table-of-contents)
-
-
-- ## character.search()
-   Search for a character by name or query.
-
-   ```js
-   await client.character.search(name);
-   ```
-   | Param | Require | Type | Description |
-   | --- | --- | --- | --- | 
-   | name | `true` | `string` | Search queries to find characters. |
-
-   [Back to the Table of contents](#table-of-contents)
-
-
-- ## character.search_suggest()
-   Search character by name and suggested by Character.AI Server
-
-   ```js
-   await client.character.search_suggest(name);
-   ```
-   | Param | Require | Type | Description |
-   | --- | --- | --- | --- | 
-   | name | `true` | `string` | Character name query. |
 
    [Back to the Table of contents](#table-of-contents)
 
@@ -1343,6 +1469,21 @@ To install CAINode, you can simply do
 
    [Back to the Table of contents](#table-of-contents)
 
+
+- ## chat.conversation_facts()
+   i dont know what is this. but maybe this is for getting the facts of your conversation, i guess...?<br>
+   if you know this thing, please lemme know or you can do pull request if you want to.
+
+   ```js
+   await client.chat.conversation_facts("Chat ID")
+   ```
+
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | chat_id | `true` | `string` | Chat ID message that you want to get a conversation facts. |
+
+   [Back to the Table of contents](#table-of-contents)
+
 # Voice Function List
 - ## voice.user_created_list()
    Get list of user created voice information.  
@@ -1456,6 +1597,7 @@ To install CAINode, you can simply do
 
    [Back to the Table of contents](#table-of-contents)
 
+
 # Livekit Function List
 - ## voice.connect().is_character_speaking
    Check is Character is speaking or not.
@@ -1557,6 +1699,35 @@ To install CAINode, you can simply do
    | none | `false` | `null` | - |
 
    [Back to the Table of contents](#table-of-contents)
+
+# Notification Function List
+- ## notification.history()
+   Get all of the history notification.
+
+   ```js
+   await library_name.notification.history()
+   ```
+
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | none | `false` | `null` | - |
+
+   [Back to the Table of contents](#table-of-contents)
+
+
+- ## notification.history_v2()
+   Get all of the history notification (Version 2).
+
+   ```js
+   await library_name.notification.history_v2()
+   ```
+
+   | Param | Require | Type | Description |
+   | --- | --- | --- | --- | 
+   | none | `false` | `null` | - |
+
+   [Back to the Table of contents](#table-of-contents)
+
 
 # Issues
 Feel free to open the issue, I hope this documentation can help you maximally and make it easier for you to use this package.

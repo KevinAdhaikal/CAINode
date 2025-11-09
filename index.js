@@ -273,6 +273,35 @@ class User_Class {
     */
 
     /**
+     * @typedef {Object} UserBirthdayStatus
+     * @property {string} status
+     * @property {string} message
+     * @property {boolean} date_of_birth_collected
+     * @property {boolean} meets_age_requirements
+    */
+
+    /**
+     * @typedef {Object} CreatedCharactersUserInfo
+     * @property {Object[]} characters
+     * @property {string} characters[].external_id
+     * @property {string} characters[].title
+     * @property {string} characters[].greeting
+     * @property {string} characters[].description
+     * @property {string} characters[].definition
+     * @property {string} characters[].avatar_file_name
+     * @property {string} characters[].visibility
+     * @property {boolean} characters[].copyable
+     * @property {string} characters[].participant__name
+     * @property {number} characters[].participant__num_interactions
+     * @property {number} characters[].user__id
+     * @property {string} characters[].user__username
+     * @property {boolean} characters[].img_gen_enabled
+     * @property {string} characters[].default_voice_id
+     * @property {number} characters[].remix_count
+     * @property {number} characters[].upvotes
+    */
+
+    /**
      * @type {CAINode_Property}
      */
     #prop;
@@ -313,23 +342,6 @@ class User_Class {
     async public_info(username) {
         if (!this.#prop.token) throw "Please login first."
         return await (await https_fetch("https://plus.character.ai/chat/user/public/", "POST", {"Authorization": `Token ${this.#prop.token}`, "Content-Type": "application/json"}, JSON.stringify({"username": username ? username : this.#prop.user_data.user.user.username}))).json()
-    }
-
-    /**
-     * Search user by name.  
-     *   
-     * Example: `await library_name.user.search("Name user")`
-     * 
-     * @param {string} name
-     * @returns {Promise<UserSearch>}
-    */
-    async search(name) {
-        if (!this.#prop.token) throw "Please login first."
-        if (!name) throw "Parameter named 'name' cannot be empty."
-
-        return await (await https_fetch(`https://neo.character.ai/search/v1/creator?query=${name}`, "GET", {
-            "Authorization": `Token ${this.#prop.token}`
-        })).json();
     }
 
     /**
@@ -437,6 +449,25 @@ class User_Class {
         if (!this.#prop.token) throw "Please login first."
         return await (await https_fetch("https://plus.character.ai/chat/user/public/following/", "POST", {"Authorization": `Token ${this.#prop.token}`, "Content-Type": "application/json"}, JSON.stringify({
             "username":username ? username : this.#prop.user_data.user.user.username, "pageParam": page_param
+        }))).json()
+    }
+
+    /**
+     * Check are you following this user account or not.  
+     *   
+     * Example: `await library_name.user.following_check("Username")`
+     * 
+     * @param {string} username 
+     * @returns {Promise<{"followStatus": Record<string, boolean>}>}
+     */
+    async following_check(username) {
+        if (!this.#prop.token) throw "Please login first.";
+
+        return await (await https_fetch("https://neo.character.ai/external/users/following/check", "POST", {
+            "Authorization": `Token ${this.#prop.token}`,
+            "Content-Type": "application/json"
+        }, JSON.stringify({
+            "usernames_to_check": [username]
         }))).json()
     }
     
@@ -598,6 +629,34 @@ class User_Class {
     async clear_muted_words() {
         if (!this.#prop.token) throw "Please login first."
         return await this.update_settings({"outputStylePreferences":{"bannedWords":[]}})
+    }
+
+    /** 
+     * check if the user age meets agreement (17+ i guess?)  
+     *   
+     * Example: `await library_name.user.birthday_status()`
+     * 
+     * @returns {Promise<{UserBirthdayStatus}>}
+     */
+    async birthday_status() {
+        if (!this.#prop.token) throw "Please login first."
+        return await (await https_fetch("https://plus.character.ai/chat/user/get-user-birthday-status/", "GET", {
+            "Authorization": `Token ${this.#prop.token}`
+        })).json()
+    }
+
+    /**
+     * Get all list characters created by this current user.  
+     *   
+     * Example: `await library_name.user.get_characters_created()`
+     * 
+     * @returns {Promise<CreatedCharactersUserInfo>}
+     */
+    async get_characters_created() {
+        if (!this.#prop.token) throw "Please login first."
+        return await (await https_fetch("https://neo.character.ai/character/v1/get_characters_created_by_user", "GET", {
+            "Authorization": `Token ${this.#prop.token}`
+        })).json()
     }
 }
 
@@ -1044,6 +1103,37 @@ class Explore_Class {
     }
 
     /**
+     * Get a list of discovery tags by the Character.AI server.  
+     *   
+     * Example: `await library_name.explore.discovery_tags()`
+     * 
+     * @returns {Promise<{tags: String[]}>}
+     */
+    async discovery_tags() {
+        if (!this.#prop.token) throw "Please login first."
+        return await (await https_fetch("https://neo.character.ai/recommendation/v1/discovery_tags", "GET", {
+            "Authorization": `Token ${this.#prop.token}`
+        })).json()
+    }
+
+    /**
+     * Get a list of characters by tags.  
+     *   
+     * Example: `await library_name.explore.character_with_tags()`
+     * 
+     * @param {string} tag
+     * @returns {Promise<{tags: String[]}>}
+     */
+    async characters_with_tag(tag) {
+        if (!this.#prop.token) throw "Please login first."
+        if (typeof tag != "string") throw "Parameter 'name' is inavlid. Please fill it correctly."
+        
+        return await (await https_fetch(`https://neo.character.ai/recommendation/v1/characters_with_tag/${tag}`, "GET", {
+            "Authorization": `Token ${this.#prop.token}`
+        })).json()
+    }
+
+    /**
      * Get a list of characters from the character category exploration.  
      *   
      * Example: `await library_name.explore.character_categories()`
@@ -1070,30 +1160,28 @@ class Character_Class {
     /**
      * @typedef {Object} CharactersSearchInfo
      * @property {Object[]} characters
-     * @property {string} characters[].document_id
-     * @property {string} characters[].external_id
      * @property {string} characters[].title
      * @property {string} characters[].greeting
+     * @property {string} characters[].description
+     * @property {string} characters[].external_id
+     * @property {number} characters[].priority
      * @property {string} characters[].avatar_file_name
      * @property {string} characters[].visibility
+     * @property {string} characters[].tag_id
+     * @property {string} characters[].tag
+     * @property {number} characters[].created_at
+     * @property {number} characters[].updated_at
+     * @property {number} characters[].num_likes
+     * @property {number} characters[].num_interactions_last_day
+     * @property {number} characters[].score
      * @property {string} characters[].participant__name
-     * @property {number} characters[].participant__num_interactions
      * @property {string} characters[].user__username
-     * @property {number} characters[].priority
-     * @property {number} characters[].search_score
-     * @property {string} request_id
-    */
-
-    /**
-     * @typedef {Object} CharactersSearchSuggestInfo
-     * @property {Object[]} characters
-     * @property {string} characters[].document_id
-     * @property {string} characters[].external_id
-     * @property {string} characters[].name
-     * @property {string} characters[].avatar_file_name
-     * @property {string} characters[].num_interactions
-     * @property {string} characters[].title
-     * @property {string} characters[].greeting
+     * @property {number} characters[].participant__num_interactions
+     * @property {string} uuid
+     * @property {Object[]} tags
+     * @property {string} tags.id
+     * @property {string} tags.name 
+     * @property {boolean} safety_filtered
     */
 
     /**
@@ -1229,36 +1317,6 @@ class Character_Class {
     }
 
     /**
-     * Search for a character by name.  
-     *   
-     * Example: `await library_name.character.search("Name")`
-     * 
-     * @param {string} name
-     * @returns {Promise<CharactersSearchInfo>}
-    */
-    async search(name) {
-        if (!this.#prop.token) throw "Please login first."
-        return await (await https_fetch(`https://plus.character.ai/chat/characters/search/?query=${name}`, "GET", {
-            'Authorization': `Token ${this.#prop.token}`
-        })).json()
-    }
-
-    /**
-     * Search character by name and suggested by Character.AI Server.  
-     *   
-     * Example: `await library_name.character.search_suggest("Query")`
-     * 
-     * @param {string} name
-     * @returns {Promise<CharactersSearchSuggestInfo>}
-    */
-    async search_suggest(name) {
-        if (!this.#prop.token) throw "Please login first."
-        return await (await https_fetch(`https://plus.character.ai/chat/characters/suggest/?query=${name}`, "GET", {
-            'Authorization': `Token ${this.#prop.token}`
-        })).json()
-    }
-
-    /**
      * Get detailed information about characters.  
      *   
      * Example: `await library_name.character.info("Character ID")`
@@ -1274,6 +1332,30 @@ class Character_Class {
         }, JSON.stringify({
             "external_id": char_id
         }))).json()
+    }
+
+    /**
+     * Get tags info by Character ID (i guess?)  
+     *   
+     * Example: `await library_name.character.tags_info()`
+     * 
+     * @param {String[] | string} char_ids
+     * @returns {Promise<{ranked_tags: String[], character_id_to_tags: String[]}>}
+     */
+    async tags_info(char_ids) {
+        if (!this.#prop.token) throw "Please login first.";
+
+        if (typeof char_ids == "string") {
+            return await (await https_fetch("https://neo.character.ai/character/v1/characters_tags_info", "POST", {
+                'Authorization': `Token ${this.#prop.token}`,
+                "Content-Type": "application/json"
+            }, JSON.stringify({"external_ids": [char_ids]}))).json()
+        } else if (Array.isArray(char_ids)) {
+            return await (await https_fetch("https://neo.character.ai/character/v1/characters_tags_info", "POST", {
+                'Authorization': `Token ${this.#prop.token}`,
+                "Content-Type": "application/json"
+            }, JSON.stringify({"external_ids": char_ids}))).json()
+        } else throw "Paramater 'char_ids' type must be string or array."
     }
 
     /**
@@ -1877,6 +1959,158 @@ class Character_Class {
     }
 }
 
+class Search_Class {
+    #prop
+    constructor(prop) {
+        this.#prop = prop; 
+    }
+
+    /**
+     * Get list of tags.  
+     *   
+     * Example: `await library_name.search.list_tags()`
+     * 
+     * @returns {Promise<>}
+     */
+    async list_tags() {
+        if (!this.#prop.token) throw "Please login first.";
+
+        return await (await https_fetch("https://neo.character.ai/search/v1/tags", "GET", {
+            'Authorization': `Token ${this.#prop.token}`
+        })).json()
+    }
+
+    /**
+     * Search users by name.  
+     *   
+     * Example: `await library_name.search.users("Name user", "popular") // sorted by popular`
+     * 
+     * @template {"popular" | "followers"} T
+     * @param {string} name
+     * @param {T | "" | undefined} sorted_by
+     * @returns {Promise<UserSearch>}
+    */
+    async users(name, sorted_by) {
+        if (!this.#prop.token) throw "Please login first."
+        if (typeof name != "string") throw "Parameter 'name' is inavlid. Please fill it correctly."
+        if (typeof sorted_by != "string") throw "Parameter 'sorted_by' is invalid. Please fill it correctly."
+
+        return await (await https_fetch(`https://neo.character.ai/search/v1/creator?query=${name}&sortedBy=${sorted_by}`, "GET", {
+            "Authorization": `Token ${this.#prop.token}`
+        })).json();
+    }
+
+    /**
+     * Search scenes by query.  
+     *   
+     * Example: `await library_name.search.scenes("Query")`
+     * 
+     * @param {string} query
+     * @returns {Promise<{"scenes": [], "uuid": string}>}
+     */
+    async scenes(query) {
+        if (!this.#prop.token) throw "Please login first.";
+
+        return await (await https_fetch(`https://neo.character.ai/search/v1/scene?query=${query}`, "GET", {
+            'Authorization': `Token ${this.#prop.token}`
+        })).json();
+    }
+
+    /**
+     * Search for a characters by name.  
+     *   
+     * Example: `await library_name.search.characters("Character Name")`
+     * 
+     * @template {"relevance" | "likes" | "popular" | "newest"} T
+     * @param {string} name
+     * @param {T | "" | undefined} sorted_by
+     * @returns {Promise<CharactersSearchInfo>}
+    */
+    async characters(name, sorted_by = "relevance") {
+        if (!this.#prop.token) throw "Please login first."
+        if (typeof name != "string") throw "Parameter 'name' is inavlid. Please fill it correctly."
+        if (typeof sorted_by != "string") throw "Parameter 'sorted_by' is invalid. Please fill it correctly."
+        
+        return await (await https_fetch(`https://neo.character.ai/search/v1/character?query=${name}&sortedBy=${sorted_by}`, "GET", {
+            'Authorization': `Token ${this.#prop.token}`
+        })).json()
+    }
+
+    /**
+     * Search for a voices by name.  
+     *   
+     * Example: `await library_name.search.voices("Name voice")`
+     * 
+     * @param {string} name
+     * @returns {Promise<{ voices: VoiceInfo[] }>}
+    */
+    async voices(name) {
+        return await (await https_fetch(`https://neo.character.ai/multimodal/api/v1/voices/search?characterName=${name}`, "GET", {
+            "Authorization": `Token ${this.#prop.token}`
+        })).json()
+    }
+
+    /**
+     * Get popular search.  
+     *   
+     * Example: `await library_name.search.popular()`
+     * 
+     * @returns {Promise<String[]>}
+    */
+    async popular() {
+        if (!this.#prop.token) throw "Please login first."
+
+        return await (await https_fetch(`https://neo.character.ai/search/v1/query/popular`, "GET", {
+            'Authorization': `Token ${this.#prop.token}`
+        })).json()
+    }
+
+    /**
+     * Get trending search.  
+     *   
+     * Example: `await library_name.search.trending()`
+     * 
+     * @returns {Promise<String[]>}
+    */
+    async trending() {
+        if (!this.#prop.token) throw "Please login first."
+        
+        return await (await https_fetch(`https://neo.character.ai/search/v1/query/trending`, "GET", {
+            'Authorization': `Token ${this.#prop.token}`
+        })).json()
+    }
+
+    /**
+     * Get autocomplete search.  
+     *   
+     * Example: `await library_name.search.autocomplete("Search")`
+     * 
+     * @param {string} query 
+     * @returns {Promise<{"search_autocomplete": String[]}>}
+     */
+    async autocomplete(query) {
+        if (!this.#prop.token) throw "Please login first.";
+
+        return await (await https_fetch(`https://neo.character.ai/search/v1/query/autocomplete?query_prefix=${query}`, "GET", {
+            'Authorization': `Token ${this.#prop.token}`
+        })).json();
+    }
+    
+    /** Get languages list.  
+     *   
+     * Example: `await library_name.search.languages()`
+     * 
+     * @returns {Promise<{languages: [{"id": string, "name": string, "localized_name": string, "code": string}]}>}
+     */
+    async languages() {
+        if (!this.#prop.token) throw "Please login first.";
+
+        return await (await https_fetch("https://neo.character.ai/search/v1/languages", "GET", {
+            'Authorization': `Token ${this.#prop.token}`
+        })).json();
+    }
+}
+
 class GroupChat_Class {
     /**
      * @typedef {Object} GroupChatListInfo
@@ -2133,18 +2367,28 @@ class GroupChat_Class {
     /**
      * Rename group chat.  
      *   
-     * Example: `await library_name.group_chat.rename("New Name", "Room ID")`
+     * Example: 
+     * - Automatic (must be connected to the group chat): `await library_name.group_chat.rename("New Name")`  
+     * - Input group_id manually: `await library_name.group_chat.rename("New Name", "Room ID")`  
+     *   
+     * NOTE: You can also rename another group chat if you're already connected to the current group chat. (group_id prioritize)
      * 
      * @param {string} new_name
-     * @param {string} room_id
+     * @param {string | undefined} group_id
      * @returns {Promise<GroupChatActivityInfo>}
     */
-    async rename(new_name, room_id) {
+    async rename(new_name, group_id = this.#prop.current_chat_id) {
         if (!this.#prop.token) throw "Pleae login first"
-        return await (await https_fetch(`https://neo.character.ai/muroom/${this.#prop.join_type == 2 ? this.#prop.current_chat_id : room_id}/`, "PATCH", {'Authorization': `Token ${this.#prop.token}`}, JSON.stringify([
+
+        if (!group_id && !this.#prop.current_chat_id) {
+            if (!this.#prop.current_candidate_id) throw "Please at least input group_id or connect to the group chat first.";
+            else group_id = this.#prop.current_chat_id
+        }
+
+        return await (await https_fetch(`https://neo.character.ai/muroom/${group_id}/`, "PATCH", {'Authorization': `Token ${this.#prop.token}`}, JSON.stringify([
             {
                 "op": "replace",
-                "path": `/muroom/${this.#prop.join_type == 2 ? this.#prop.current_chat_id : room_id}`,
+                "path": `/muroom/${group_id}`,
                 "value": {
                     "title": `${new_name}`
                 }
@@ -2169,33 +2413,43 @@ class GroupChat_Class {
     /**
      * Add a character with Character ID to the group chat.  
      *   
-     * Example: `await library_name.group_chat.char_add("Character ID")`
+     * Example (Connected to current Group Chat): `await library_name.group_chat.char_add("Character ID")`  
+     * Example (targeting to another Group chat): `await library_name.group_chat.char_add("Character ID", {groupchat_id: "Group Chat ID"})`  
+     *   
+     * NOTE: You can also add a character to another group chat even if you're already connected to the current group chat. (group_id prioritize)
      * 
      * @param {string} char_id
+     * @param {{groupchat_id: string, timeout_ms: number} | undefined} manual_opt
      * @returns {Promise<GroupChatActivityInfo>}
     */
-    async char_add(char_id) {
+    async char_add(char_id, manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}) {
         if (!this.#prop.token) throw "Please login first."
-        if (!this.#prop.join_type || this.#prop.join_type != 2) throw "This function only works when you're connected on Group Chat."
+
+        if (typeof manual_opt != "object") manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}
+        if (typeof manual_opt.groupchat_id != "string" || !manual_opt.groupchat_id) manual_opt.groupchat_id = this.#prop.current_chat_id
+        if (typeof manual_opt.timeout_ms != "number" || manual_opt.timeout_ms < 0) manual_opt.timeout_ms = 0;
+
+        if (!manual_opt.groupchat_id) throw "Group Chat ID cannot be empty, or at least connect to the Group Chat first.";
 
         if (Array.isArray(char_id)) {
-            return await (await https_fetch(`https://neo.character.ai/muroom/${this.#prop.current_chat_id}/`, "PATCH", {
+            return await (await https_fetch(`https://neo.character.ai/muroom/${manual_opt.groupchat_id}/`, "PATCH", {
                 'Authorization': `Token ${this.#prop.token}`
             }, JSON.stringify(char_id.map(id => {
                 return {
                     "op": "add",
-                    "path": `/muroom/${this.#prop.current_chat_id}/characters`,
+                    "path": `/muroom/${manual_opt.groupchat_id}/characters`,
                     "value": {
                         "id": id
                     }
                 };
             })))).json()
         } else {
-            return await (await https_fetch(`https://neo.character.ai/muroom/${this.#prop.current_chat_id}/`, "PATCH", {
+            if (typeof char_id !== "string") throw "Please provide a valid character id."
+            return await (await https_fetch(`https://neo.character.ai/muroom/${manual_opt.groupchat_id}/`, "PATCH", {
                 'Authorization': `Token ${this.#prop.token}`
             }, JSON.stringify([{
                 "op": "add",
-                "path": `/muroom/${this.#prop.current_chat_id}/characters`,
+                "path": `/muroom/${manual_opt.groupchat_id}/characters`,
                 "value": {
                     "id": char_id
                 }
@@ -2206,33 +2460,43 @@ class GroupChat_Class {
     /**
      * Remove a character with Character ID from the group chat.  
      *   
-     * Example: `await library_name.group_chat.char_remove("Character ID")`
+     * Example  
+     * Example (Connected to current Group Chat): `await library_name.group_chat.char_remove("Character ID")`  
+     * Example (targeting to another Group chat): `await library_name.group_chat.char_remove("Character ID", {groupchat_id: "Group Chat ID"})`  
+     *   
+     * NOTE: You can also remove the character to another group chat even if you're already connected to the current group chat. (group_id prioritize)
      * 
      * @param {string} char_id
+     * @param {{groupchat_id: string, timeout_ms: number} | undefined} manual_opt
      * @returns {Promise<GroupChatActivityInfo>}
     */
-    async char_remove(char_id) {
+    async char_remove(char_id, manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}) {
         if (!this.#prop.token) throw "Please login first."
-        if (!this.#prop.join_type || this.#prop.join_type != 2) throw "This function only works when you're connected on Group Chat."
+
+        if (typeof manual_opt != "object") manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}
+        if (typeof manual_opt.groupchat_id != "string" || !manual_opt.groupchat_id) manual_opt.groupchat_id = this.#prop.current_chat_id
+        if (typeof manual_opt.timeout_ms != "number" || manual_opt.timeout_ms < 0) manual_opt.timeout_ms = 0;
+
+        if (!manual_opt.groupchat_id) throw "Group Chat ID cannot be empty, or at least connect to the Group Chat first.";
 
         if (Array.isArray(char_id)) {
-            return await (await https_fetch(`https://neo.character.ai/muroom/${this.#prop.current_chat_id}/`, "PATCH", {
+            return await (await https_fetch(`https://neo.character.ai/muroom/${manual_opt.groupchat_id}/`, "PATCH", {
                 'Authorization': `Token ${this.#prop.token}`
             }, JSON.stringify(char_id.map(id => {
                 return {
                     "op": "remove",
-                    "path": `/muroom/${this.#prop.current_chat_id}/characters`,
+                    "path": `/muroom/${manual_opt.groupchat_id}/characters`,
                     "value": {
                         "id": id
                     }
                 };
             })))).json()
         } else {
-            return await (await https_fetch(`https://neo.character.ai/muroom/${this.#prop.current_chat_id}/`, "PATCH", {
+            return await (await https_fetch(`https://neo.character.ai/muroom/${manual_opt.groupchat_id}/`, "PATCH", {
                 'Authorization': `Token ${this.#prop.token}`
             }, JSON.stringify([{
                 "op": "remove",
-                "path": `/muroom/${this.#prop.current_chat_id}/characters`,
+                "path": `/muroom/${manual_opt.groupchat_id}/characters`,
                 "value": {
                     "id": char_id
                 }
@@ -2243,36 +2507,45 @@ class GroupChat_Class {
     /**
      * Send message to group chat.  
      *   
-     * Example  
+     * Example (Connected to the Group chat)  
      * - Default (Without Image): `await library_name.group_chat.send_message("Your Message")`  
-     * - With Image: `await library_name.group_chat.send_message("Your Message", "URL Image")`
+     * - With Image: `await library_name.group_chat.send_message("Your Message", "URL Image")`  
+     *   
+     * Example (Manually connect to the Group chat)  
+     * - Default (Without Image)
+     * ```
+     * await library_name.group_chat.send_message("Your Message", null, {
+     *     groupchat_id: "Group Chat ID"
+     * })
+     * ```  
+     * - With Image
+     * ```
+     * await library_name.group_chat.send_message("Your Message", "URL Image", {
+     *      groupchat_id: "Group Chat ID"
+     * })
+     * ```
      * 
      * @param {string} message
      * @param {string | undefined} image_url_path
-     * @param {number} timeout_ms
+     * @param {{groupchat_id: string, timeout_ms: number} | undefined} manual_opt
      * @returns {Promise<GroupChatInfo>}
     */
-    async send_message(message, image_url_path = "", timeout_ms = 0) {
+    async send_message(message, image_url_path = "", manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}) {
         if (!this.#prop.token) throw "Please login first."
-        if (!this.#prop.join_type || this.#prop.join_type != 2) throw "This function only works when you're connected on Group Chat."
 
-        if (typeof manual_opt != "object") {
-            manual_opt = {
-                char_id: this.#prop.current_char_id_chat,
-                chat_id: this.#prop.current_chat_id,
-                timeout_ms: 0
-            }
-        }
+        if (typeof manual_opt != "object") manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}
+        if (typeof manual_opt.groupchat_id != "string" || !manual_opt.groupchat_id) manual_opt.groupchat_id = this.#prop.current_chat_id
+        if (typeof manual_opt.timeout_ms != "number" || manual_opt.timeout_ms < 0) manual_opt.timeout_ms = 0;
 
-        if (timeout_ms < 0) timeout_ms = 0;
+        if (!manual_opt.groupchat_id) throw "Group Chat ID cannot be empty, or at least connect to the Group Chat first.";
 
-        const turn_key = this.#prop.join_type ? generateRandomUUID() : ""
+        const turn_key = generateRandomUUID();
         return await send_ws(this.#prop.ws[0], JSON.stringify({
             "rpc": {
                 "method": "unused_command",
                 "data": {
                     "command": "create_turn",
-                    "request_id": generateRandomUUID().slice(0, -12) + this.#prop.current_chat_id.split("-")[4],
+                    "request_id": generateRandomUUID().slice(0, -12) + manual_opt.groupchat_id.split("-")[4],
                     "payload": {
                         "chat_type": "TYPE_MU_ROOM",
                         "num_candidates": 1,
@@ -2280,7 +2553,7 @@ class GroupChat_Class {
                         "turn": {
                             "turn_key": {
                                 "turn_id": turn_key,
-                                "chat_id": this.#prop.current_chat_id
+                                "chat_id": manual_opt.groupchat_id
                             },
                             "author": {
                                 "author_id": `${this.#prop.user_data.user.user.id}`,
@@ -2298,31 +2571,42 @@ class GroupChat_Class {
                 }
             },
             "id": 1
-        }), true, 2, false, null, timeout_ms)
+        }), true, 2, false, null, manual_opt.timeout_ms)
     }
 
     /**
      * Generating message response character from group chat.  
      *   
-     * Example: `await library_name.group_chat.generate_turn()`
+     * Example (Connected to the Group Chat): `await library_name.group_chat.generate_turn()`  
+     * Example (Manually connect to the Group chat)  
+     * ```
+     * await library_name.group_chat.generate_turn({
+     *      groupchat_id: "Your Group Chat ID"
+     * })
+     * ```
      * 
-     * @param {number} timeout_ms
+     * @param {{groupchat_id: string, timeout_ms: number} | undefined} manual_opt
      * @returns {Promise<GroupChatInfo>}
     */
-    async generate_turn(timeout_ms = 0) {
+    async generate_turn(manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}) {
         if (!this.#prop.token) throw "Please login first."
         if (!this.#prop.join_type || this.#prop.join_type != 2) throw "This function only works when you're connected on Group Chat."
-        if (timeout_ms < 0) timeout_ms = 0;
+        
+        if (typeof manual_opt != "object") manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}
+        if (typeof manual_opt.groupchat_id != "string" || !manual_opt.groupchat_id) manual_opt.groupchat_id = this.#prop.current_chat_id
+        if (typeof manual_opt.timeout_ms != "number" || manual_opt.timeout_ms < 0) manual_opt.timeout_ms = 0;
+
+        if (!manual_opt.groupchat_id) throw "Group Chat ID cannot be empty, or at least connect to the Group Chat first.";
 
         return await send_ws(this.#prop.ws[0], JSON.stringify({
             "rpc": {
                 "method": "unused_command",
                 "data": {
                     "command": "generate_turn",
-                    "request_id": generateRandomUUID().slice(0, -12) + this.#prop.current_chat_id.split("-")[4],
+                    "request_id": generateRandomUUID().slice(0, -12) + manual_opt.groupchat_id.split("-")[4],
                     "payload": {
                         "chat_type": "TYPE_MU_ROOM",
-                        "chat_id": this.#prop.current_chat_id,
+                        "chat_id": manual_opt.groupchat_id,
                         "user_name": this.#prop.user_data.user.user.username,
                         "smart_reply": "CHARACTERS",
                         "smart_reply_delay": 0
@@ -2331,56 +2615,73 @@ class GroupChat_Class {
                 }
             },
             "id": 1
-        }), true, 2, true)
+        }), true, 2, true, null, manual_opt.timeout_ms)
     }
 
     /**
      * Regenerate character message.  
      *   
-     * Example: `await library_name.group_chat.generate_turn_candidate()`
+     * Example (Connected to current Group Chat): `await library_name.group_chat.generate_turn_candidate("Turn ID", "Character ID")`  
+     * Example (targeting to another Group chat)  
+     * ```
+     * await library_name.group_chat.generate_turn_candidate("Turn ID", "Character ID", {
+     *      groupchat_id: "Your Group Chat ID"
+     * })
+     * ```
      * 
      * @param {string} turn_id
      * @param {string} char_id
-     * @param {number} timeout_ms
+     * @param {{groupchat_id: string, timeout_ms: number} | undefined} manual_opt
      * @returns {Promise<GroupChatInfo>}
     */
-    async generate_turn_candidate(turn_id, char_id, timeout_ms = 0) {
+    async generate_turn_candidate(turn_id, char_id, manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}) {
         if (!this.#prop.token) throw "Please login first."
         if (!this.#prop.join_type || this.#prop.join_type != 2) throw "This function only works when you're connected on Group Chat."
         
-        if (timeout_ms < 0) timeout_ms = 0;
+        if (typeof manual_opt != "object") manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}
+        if (typeof manual_opt.groupchat_id != "string" || !manual_opt.groupchat_id) manual_opt.groupchat_id = this.#prop.current_chat_id
+        if (typeof manual_opt.timeout_ms != "number" || manual_opt.timeout_ms < 0) manual_opt.timeout_ms = 0;
+
+        if (!manual_opt.groupchat_id) throw "Group Chat ID cannot be empty, or at least connect to the Group Chat first.";
 
         return await send_ws(this.#prop.ws[0], JSON.stringify({
             "rpc": {
                 "method": "unused_command",
                 "data": {
                     "command": "generate_turn_candidate",
-                    "request_id": generateRandomUUID().slice(0, -12) + this.#prop.current_chat_id.split("-")[4],
+                    "request_id": generateRandomUUID().slice(0, -12) + manual_opt.groupchat_id.split("-")[4],
                     "payload": {
                         "chat_type": "TYPE_MU_ROOM",
                         "character_id": char_id,
                         "user_name": this.#prop.user_data.user.user.username,
                         "turn_key": {
                             "turn_id": turn_id,
-                            "chat_id": this.#prop.current_chat_id
+                            "chat_id": manual_opt.groupchat_id
                         }
                     }
                 }
             },
             "id": 1
-        }), true, 2, true)
+        }), true, 2, true, null, manual_opt.timeout_ms)
     }
 
     /**
      * Reset conversation in group chat.  
      *   
-     * Example: `await library_name.group_chat.reset_conversation()`
+     * Example (Connected to current Group Chat): `await library_name.group_chat.reset_conversation()`  
+     * Example (targeting to another Group chat): `await library_name.group_chat.reset_conversation({groupchat_id: "Group Chat ID"})`
      * 
+     * @param {{groupchat_id: string, timeout_ms: number}} manual_opt
      * @returns {Promise<GroupChatInfo>}
     */
-    async reset_conversation() {
+    async reset_conversation(manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}) {
         if (!this.#prop.token) throw "Please login first."
-        if (!this.#prop.join_type || this.#prop.join_type != 2) throw "This function only works when you're connected on Group Chat."
+
+        if (typeof manual_opt != "object") manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}
+        if (typeof manual_opt.groupchat_id != "string" || !manual_opt.groupchat_id) manual_opt.groupchat_id = this.#prop.current_chat_id
+        if (typeof manual_opt.timeout_ms != "number" || manual_opt.timeout_ms < 0) manual_opt.timeout_ms = 0;
+
+        if (!manual_opt.groupchat_id) throw "Group Chat ID cannot be empty, or at least connect to the Group Chat first.";
 
         const turn_key = generateRandomUUID()
         return await send_ws(this.#prop.ws[0], JSON.stringify({
@@ -2388,7 +2689,7 @@ class GroupChat_Class {
                 "method": "unused_command",
                 "data": {
                     "command": "create_turn",
-                    "request_id": generateRandomUUID().slice(0, -12) + this.#prop.current_chat_id.split("-")[4],
+                    "request_id": generateRandomUUID().slice(0, -12) + manual_opt.groupchat_id.split("-")[4],
                     "payload": {
                         "chat_type": "TYPE_MU_ROOM",
                         "num_candidates": 1,
@@ -2397,7 +2698,7 @@ class GroupChat_Class {
                             "context_reset": true,
                             "turn_key": {
                                 "turn_id": turn_key,
-                                "chat_id": this.#prop.current_chat_id
+                                "chat_id": manual_opt.groupchat_id
                             },
                             "author": {
                                 "author_id": `${this.#prop.user_data.user.user.id}`,
@@ -2414,54 +2715,75 @@ class GroupChat_Class {
                 }
             },
             "id": 1
-        }), true, 2, false)
+        }), true, 2, false, false, manual_opt.timeout_ms)
     }
 
     /**
      * Delete user/character message.  
      *   
-     * Example: `await library_name.group_chat.delete_message("Turn ID")`
+     * Example (Connected to current Group Chat): `await library_name.group_chat.delete_message("Turn ID")`  
+     * Example (targeting to another Group chat): `await library_name.group_chat.delete_message("Turn ID", {groupchat_id: "Group Chat ID"})`
      * 
      * @param {string} turn_id
+     * @param {{groupchat_id: string, timeout_ms: number}} manual_opt
      * @returns {Promise<boolean>}
     */
-    async delete_message(turn_id) {
+    async delete_message(turn_id, manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}) {
         if (!this.#prop.token) throw "Please login first."
-        if (!this.#prop.join_type || this.#prop.join_type != 2) throw "This function only works when you're connected on Group Chat."
+
+        if (typeof manual_opt != "object") manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}
+        if (typeof manual_opt.groupchat_id != "string" || !manual_opt.groupchat_id) manual_opt.groupchat_id = this.#prop.current_chat_id
+        if (typeof manual_opt.timeout_ms != "number" || manual_opt.timeout_ms < 0) manual_opt.timeout_ms = 0;
+
+        if (!manual_opt.groupchat_id) throw "Group Chat ID cannot be empty, or at least connect to the Group Chat first.";
+        if (typeof turn_id !== "string") throw "Please provide a valid turn_id.";
 
         await send_ws(this.#prop.ws[1], JSON.stringify({
             "command": "remove_turns",
-            "request_id": generateRandomUUID().slice(0, -12) + this.#prop.current_chat_id.split("-")[4],
+            "request_id": generateRandomUUID().slice(0, -12) + manual_opt.groupchat_id.split("-")[4],
             "payload": {
-                "chat_id": this.#prop.current_chat_id,
+                "chat_id": manual_opt.groupchat_id,
                 "turn_ids": Array.isArray(turn_id) ? turn_id : [turn_id]
             },
             "origin_id": "Android"
-        }), false, 0, false)
+        }), false, 0, false, false, manual_opt.timeout_ms)
         return true;
     }
 
     /**
      * Edit user/character message.  
      *   
-     * Example: `await library_name.group_chat.edit_message("Turn ID")`
+     * Example (Connected to current Group Chat): `await library_name.group_chat.edit_message("Candidate ID", "Turn ID", "New Message")`  
+     * Example (targeting to another Group chat): `await library_name.group_chat.edit_message("Candidate ID", "Turn ID", "New Message", {groupchat_id: "Group Chat ID"})`
      * 
+     * @param {string} candidate_id
      * @param {string} turn_id
+     * @param {string} new_message
+     * @param {{groupchat_id: string, timeout_ms: number}} manual_opt
+     * 
      * @returns {Promise<GroupChatInfo>}
     */
-    async edit_message(candidate_id, turn_id, new_message) {
+    async edit_message(candidate_id, turn_id, new_message, manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}) {
         if (!this.#prop.token) throw "Please login first."
-        if (!this.#prop.join_type || this.#prop.join_type != 2) throw "This function only works when you're connected on Group Chat."
+        
+        if (typeof manual_opt != "object") manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}
+        if (typeof manual_opt.groupchat_id != "string" || !manual_opt.groupchat_id) manual_opt.groupchat_id = this.#prop.current_chat_id
+        if (typeof manual_opt.timeout_ms != "number" || manual_opt.timeout_ms < 0) manual_opt.timeout_ms = 0;
+
+        if (!manual_opt.groupchat_id) throw "Group Chat ID cannot be empty, or at least connect to the Group Chat first.";
+
+        if (typeof candidate_id !== "string") throw "Please provide a valid candidate_id.";
+        if (typeof turn_id !== "string") throw "Please provide a valid turn_id.";
         
         const result = await send_ws(this.#prop.ws[0], JSON.stringify({
             "rpc": {
                 "method": "unused_command",
                 "data": {
                     "command": "edit_turn_candidate",
-                    "request_id": generateRandomUUID().slice(0, -12) + this.#prop.current_chat_id.split("-")[4],
+                    "request_id": generateRandomUUID().slice(0, -12) + manual_opt.groupchat_id.split("-")[4],
                     "payload": {
                         "turn_key": {
-                            "chat_id": this.#prop.current_chat_id,
+                            "chat_id": manual_opt.groupchat_id,
                             "turn_id": turn_id
                         },
                         "current_candidate_id": candidate_id,
@@ -2470,7 +2792,7 @@ class GroupChat_Class {
                 }
             },
             "id": 1
-        }), true, 2, false)
+        }), true, 2, false, false, manual_opt.timeout_ms)
 
         if (!result.push.pub.data.turn.author.is_human) {
             await send_ws(this.#prop.ws[1], JSON.stringify({
@@ -2483,7 +2805,7 @@ class GroupChat_Class {
                     }
                 },
                 "origin_id": "Android"
-            }), false, 0, false)
+            }), false, 0, false, manual_opt.timeout_ms)
         }
         return result;
     }
@@ -2491,32 +2813,39 @@ class GroupChat_Class {
     /**
      * Select the turn of character chat by yourself.  
      *   
-     * Example: `await library_name.group_chat.select_turn("Character ID")`
+     * Example (Connected to current Group Chat): `await library_name.group_chat.select_turn("Character ID", "Turn ID")`  
+     * Example (targeting to another Group chat): `await library_name.group_chat.select_turn("Character ID", {groupchat_id: "Group Chat ID"})`
      * 
      * @param {string} char_id
-     * @param {number} timeout_ms
+     * @param {{groupchat_id: string, timeout_ms: number}} manual_opt
      * @returns {Promise<GroupChatInfo>}
     */
-    async select_turn(char_id, timeout_ms = 0) {
+    async select_turn(char_id, manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}) {
         if (!this.#prop.token) throw "Please login first."
-        if (!this.#prop.join_type || this.#prop.join_type != 2) throw "This function only works when you're connected on Group Chat."
-        if (timeout_ms < 0) timeout_ms = 0;
+
+        if (typeof manual_opt != "object") manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}
+        if (typeof manual_opt.groupchat_id != "string" || !manual_opt.groupchat_id) manual_opt.groupchat_id = this.#prop.current_chat_id
+        if (typeof manual_opt.timeout_ms != "number" || manual_opt.timeout_ms < 0) manual_opt.timeout_ms = 0;
+
+        if (!manual_opt.groupchat_id) throw "Group Chat ID cannot be empty, or at least connect to the Group Chat first.";
+
+        if (typeof char_id !== "string") throw "Please provide a valid char_id.";
         
         return await send_ws(this.#prop.ws[0], JSON.stringify({
             "rpc": {
                 "method": "unused_command",
                 "data": {
                     "command": "generate_turn",
-                    "request_id": generateRandomUUID().slice(0, -12) + this.#prop.current_chat_id.split("-")[4],
+                    "request_id": generateRandomUUID().slice(0, -12) + manual_opt.groupchat_id.split("-")[4],
                     "payload": {
                         "chat_type": "TYPE_MU_ROOM",
                         "character_id": char_id,
-                        "chat_id": this.#prop.current_chat_id
+                        "chat_id": manual_opt.groupchat_id
                     }
                 }
             },
             "id": 1
-        }), true, 2, true)
+        }), true, 2, true, false, timeout_ms)
     }
 }
 
@@ -2815,6 +3144,91 @@ class Chat_Class {
             "name": name
         }))).json()
     }
+
+    /**
+     * i dont know what is this. but maybe this is for getting the facts of your conversation, i guess...?  
+     * if you know this thing, please lemme know or you can do pull request if you want to.  
+     *   
+     * Example: `await library_name.chat.conversation_facts("Chat ID")`
+     * 
+     * @param {string} chat_id
+     * @returns {Promise<{}>}
+     */
+    async conversation_facts(chat_id) {
+        if (!this.#prop.token) throw "Please login first.";
+
+        return await (await https_fetch(`https://neo.character.ai/chat/${chat_id}/conversation-facts`, "GET", {
+            'Authorization': `Token ${this.#prop.token}`,
+        })).json()
+    }
+}
+
+class Notification_Class {
+    /**
+     * @typedef {Object[]} NotificationInfo
+     * @property {string} id
+     * @property {string} channel
+     * @property {string} sent_at
+     * @property {string} title
+     * @property {string} body
+     * @property {string} user_status
+     * @property {Object} payload
+     * @property {string} payload.type
+     * @property {string} payload.id
+     * @property {string} payload.notification_id
+    */
+    
+    /**
+     * @typedef {Object[]} NotificationInfoV2
+     * @property {string} id
+     * @property {string} channel
+     * @property {string} sent_at
+     * @property {string} title
+     * @property {string} body
+     * @property {string} user_status
+     * @property {Object} payload
+     * @property {string} payload.type
+     * @property {string} payload.id
+     * @property {string} payload.notification_id
+     * @property {Object} payload.extra_metadata
+     * @property {string} next_cursor
+    */
+
+    #prop;
+    constructor(prop) {
+        this.#prop = prop;
+    }
+
+    /**
+     * Get all of the history notification.  
+     *   
+     * Example: `await library_name.notification.history()`
+     * 
+     * @returns {Promise<NotificationInfo>}
+     */
+    async history() {
+        if (!this.#prop.token) throw "Please login first.";
+        
+        return await (await https_fetch("https://neo.character.ai/notifications/history", "GET", {
+            'Authorization': `Token ${this.#prop.token}`
+        })).json();
+    }
+    
+    /**
+     * Get all of the history notification (Version 2).  
+     * In this Version 2, it has an extra metadata.  
+     *   
+     * Example: `await library_name.notification.history_v2()`
+     * 
+     * @returns {Promise<NotificationInfoV2>}
+     */
+    async history_v2() {
+        if (!this.#prop.token) throw "Please login first.";
+        
+        return await (await https_fetch("https://neo.character.ai/v2/notifications/history", "GET", {
+            'Authorization': `Token ${this.#prop.token}`
+        })).json();
+    }
 }
 
 class Livekit_Class extends EventEmitter {
@@ -3111,24 +3525,11 @@ class Voice_Class {
     }
 
     /**
-     * Search for a voice by name.  
-     *   
-     * Example: `await library_name.voice.search("Name voice")`
-     * 
-     * @param {string} name
-     * @returns {Promise<{ voices: VoiceInfo[] }>}
-    */
-    async search(name) {
-        return await (await https_fetch(`https://neo.character.ai/multimodal/api/v1/voices/search?characterName=${name}`, "GET", {
-            "Authorization": `Token ${this.#prop.token}`
-        })).json()
-    }
-
-    /**
      * Warning: This feature only supports Single character chat, not Group chat.  
      *   
      * Connect to voice character chat, and this function works only for single character chat.  
      *   
+     * ---
      * Example function  
      * - Using Query: `await library_name.voice.connect("Query", true)`  
      * - Using Voice ID: `await library_name.voice.connect("Voice ID")`
@@ -3190,10 +3591,14 @@ class Voice_Class {
      *      });
      *      ```
      *   
+     * Or, if you just wanted to get the Livekit information only: 
+     * ```js
+     * console.log(await library_name.voice.connect("Sonic the Hedgehog", true, false, null, {return_livekit_information_only: true}))
+     * ```  
+     * ---
      * Livekit variable list (when you're connected to the character voice)  
      * - `is_character_speaking`: Check is Character is speaking or not.  
      *    
-     *   
      * Livekit function list (when you're connected to the character voice)  
      *   
      * - `on()` event:  
@@ -3208,16 +3613,16 @@ class Voice_Class {
      * @param {string} voice_query_or_id
      * @param {boolean} using_voice_query
      * @param {boolean} using_mic
-     * @param {{sample_rate: number, channel: number}} mic_opt
-     * @param {{char_id: string, chat_id: string}} manual_opt
+     * @param {{sample_rate: number, channel: number} | undefined} mic_opt
+     * @param {{char_id: string, chat_id: string, return_livekit_information_only: boolean} | undefined} manual_opt
      * @returns {Promise<Livekit_Class>}
     */
     async connect(voice_query_or_id, using_voice_query = false, using_mic = false, mic_opt = {"sample_rate": 48000, "channel": 1}, manual_opt = {
         char_id: this.#prop.current_char_id_chat,
         chat_id: this.#prop.current_chat_id,
+        return_livekit_information_only: false
     }) {
         if (!this.#prop.token) throw "Please login first."
-
         if (this.#prop.is_connected_livekit_room[0]) throw "You're already connected to Livekit room!"
 
         if (typeof mic_opt != "object") {
@@ -3226,6 +3631,8 @@ class Voice_Class {
                 channel: 1
             }
         }
+        if (typeof mic_opt.sample_rate != "number" || !mic_opt.sample_rate) mic_opt.sample_rate = 48000
+        if (typeof mic_opt.channel != "number" || !mic_opt.channel) mic_opt.channel = 1
 
         if (typeof manual_opt != "object") {
             manual_opt = {
@@ -3234,17 +3641,15 @@ class Voice_Class {
             }
         }
 
-        if (!mic_opt.sample_rate) mic_opt.sample_rate = 48000
-        if (!mic_opt.channel) mic_opt.channel = 1
-
-        if (!manual_opt.char_id) {
+        if (typeof manual_opt.char_id != "string" || !manual_opt.char_id) {
             if (this.#prop.current_char_id_chat) manual_opt.char_id = this.#prop.current_char_id_chat
             else throw "Character ID cannot be empty! please input Character ID correctly, or connect to the character by using character.connect() function."
         }
-        if (!manual_opt.chat_id) {
+        if (typeof manual_opt.chat_id != "string" || !manual_opt.chat_id) {
             if (this.#prop.current_chat_id) manual_opt.chat_id = this.#prop.current_chat_id
             else throw "Chat ID cannot be empty! please input Chat ID correctly, or connect to the character by using character.connect() function."
         }
+        if (typeof manual_opt.return_livekit_information_only != "boolean") manual_opt.return_livekit_information_only = false
 
         return new Promise(async resolve => {
             const livekit = await import("@livekit/rtc-node").catch(_ => {
@@ -3274,44 +3679,69 @@ class Voice_Class {
                 if (connect_result.message.includes("error reading voice")) throw "Error: Voice ID not found! Please input a correct Voice ID."
                 else throw `Error: ${connect_result.message}`
             }
+            if (manual_opt.return_livekit_information_only) resolve(connect_result)
+            else {
+                const livekit_room = new livekit.Room();
 
-            const livekit_room = new livekit.Room();
-
-            livekit_room.once("trackSubscribed", track => {
-                if (track.kind == 1) {
-                    /**
-                     * Livekit variable list (when you're connected to the character voice)
-                        * - `is_character_speaking`: Check is Character is speaking or not.  
-                        *    
-                        * Livekit function list (when you're connected to the character voice)  
-                        *   
-                        * - `on()` event:  
-                        *   - "dataReceived": Receive Character.AI Livekit data events.  
-                        *   - "frameReceived": Receive audio stream from Livekit Server.  
-                        *   - "disconnected": Notify when the Voice is disconnect.  
-                        * - `input_write()`: Send audio PCM raw data to the Livekit Server.  
-                        * - `is_speech()`: this function checking is the PCM buffer frame is silence or not.  
-                        * - `interrupt_call()`: Interrupt while character talking.  
-                        * - `disconnect()`: Disconnect from voice character.
-                    */
-                    resolve(new Livekit_Class(this.#prop.token, livekit, livekit_room, {
-                        sample_rate: mic_opt.sample_rate ? mic_opt.sample_rate : 48000,
-                        channel: mic_opt.channel ? mic_opt.channel : 1,
-                        char_id: manual_opt.char_id,
-                        chat_id: manual_opt.chat_id
-                    }, using_mic, track));
-                }
-            });
-            await livekit_room.connect(connect_result.lkUrl, connect_result.lkToken, {
-                autoSubscribe: true,
-                dynacast: true
-            })
-        })
+                livekit_room.once("trackSubscribed", track => {
+                    if (track.kind == 1) {
+                        /**
+                         * Livekit variable list (when you're connected to the character voice)
+                            * - `is_character_speaking`: Check is Character is speaking or not.  
+                            *    
+                            * Livekit function list (when you're connected to the character voice)  
+                            *   
+                            * - `on()` event:  
+                            *   - "dataReceived": Receive Character.AI Livekit data events.  
+                            *   - "frameReceived": Receive audio stream from Livekit Server.  
+                            *   - "disconnected": Notify when the Voice is disconnect.  
+                            * - `input_write()`: Send audio PCM raw data to the Livekit Server.  
+                            * - `is_speech()`: this function checking is the PCM buffer frame is silence or not.  
+                            * - `interrupt_call()`: Interrupt while character talking.  
+                            * - `disconnect()`: Disconnect from voice character.
+                        */
+                        resolve(new Livekit_Class(this.#prop.token, livekit, livekit_room, {
+                            sample_rate: mic_opt.sample_rate ? mic_opt.sample_rate : 48000,
+                            channel: mic_opt.channel ? mic_opt.channel : 1,
+                            char_id: manual_opt.char_id,
+                            chat_id: manual_opt.chat_id
+                        }, using_mic, track));
+                    }
+                });
+                await livekit_room.connect(connect_result.lkUrl, connect_result.lkToken, {
+                    autoSubscribe: true,
+                    dynacast: true
+                })
+            }
+        })  
     }
+}
+
+class Feed_Class {
+    #prop
+    constructor(prop) {
+        this.#prop = prop;
+    }
+
+
 }
 
 class CAINode extends EventEmitter {
     #prop = new CAINode_prop(); // Property
+
+    /**
+     * Search function list  
+     *   
+     * - `list_tags()`: Get list of tags.  
+     * - `users()`: Search users by name.  
+     * - `scenes()`: Search scenes by query.  
+     * - `characters()`: Search for a characters by name.  
+     * - `voices()`: Search for a voices by name.  
+     * - `popular()`: Get popular search.  
+     * - `trending()`: Get trending search.  
+     * - `autocomplete()`: Get autocomplete search.  
+    */
+    search = new Search_Class(this.#prop) // Search Class
 
     /**
      * User variables list  
@@ -3326,6 +3756,7 @@ class CAINode extends EventEmitter {
      * - `update_settings()`: Update user settings by your own settings.
      * - `public_following_list()`: Get public user following list.  
      * - `public_followers_list()`: Get public user followers list.  
+     * - `following_check()`: Check are you following this user account or not.  
      * - `following_list_name()`: Get account following name list.  
      * - `followers_list_name()`: Get account followers name list.  
      * - `follow()`: Follow user account.  
@@ -3333,7 +3764,6 @@ class CAINode extends EventEmitter {
      * - `public_info()`: Get user public information account.  
      * - `public_info_array()`: Get user public information account. same like `public_info()`, but this function have less information.  
      * - `liked_character_list()`: Get account liked character list.  
-     * - `search()`: Search user by name.
      * - `add_muted_words()`: Add muted words.
      * - `remove_muted_words()`: Remove muted words.
      * - `clear_muted_words()`: Clear muted words.
@@ -3368,7 +3798,9 @@ class CAINode extends EventEmitter {
      * - `for_you()`: Get a list of characters recommended by the Character.AI server.  
      * - `character_categories()`: Get the list of characters from the character category exploration.  
      * - `featured_voices()`: Get a list of featured voices.  
-     * - `simillar_char()`: Get a list of simillar character from ID character.
+     * - `simillar_char()`: Get a list of simillar character from ID character.  
+     * - `discovery_tags()`: Get a list of discovery tags by the Character.AI server.  
+     * - `characters_with_tag()`: Get a list of characters by tags.
     */
     explore = new Explore_Class(this.#prop); // Explore Class
 
@@ -3378,9 +3810,8 @@ class CAINode extends EventEmitter {
      * - `votes()`: Get character vote information.  
      * - `votes_array()`: Get character vote information in array.  
      * - `vote()`: Used for vote the character.  
-     * - `search()`: Search for a character by name.  
-     * - `search_suggest()`: Search character by name and suggested by Character.AI Server.  
      * - `info()`: Get detailed information about characters.  
+     * - `tags_info()`: et tags info by Character ID. (i guess?)  
      * - `recent_list()`: Get a list of recent chat activity.  
      * - `connect()`: Connect client to character chat.  
      * - `disconnect()`: Disconnecting client from character chat.  
@@ -3392,6 +3823,7 @@ class CAINode extends EventEmitter {
      * - `edit_message()`: Edit the character message.  
      * - `replay_tts()`: Generate text messages from character to voice audio.  
      * - `current_voice()`: Get character current voice info.  
+     * - `get_category()`: Get category used of the character.  
      * - `about()`: Get detailed information of the character about.  
      * - `info_detailed()`: Get detailed of the character. but, it will give you a FULL detailed of the Character, including character definition.
     */
@@ -3435,11 +3867,17 @@ class CAINode extends EventEmitter {
     chat = new Chat_Class(this.#prop) // Chat Class
 
     /**
+     * Notification function list  
+     *   
+     * - `history()`: Get all of the history notification.
+     */
+    notification = new Notification_Class(this.#prop) // Notification Class
+
+    /**
      * Voice function list  
      *   
      * - `user_list()`: Get your own voice creation list information.  
      * - `info()`: Get voice information.  
-     * - `search()`: Search for a voice by name.  
      * - `connect()`: Connect to voice character chat.  
      *   
      * Livekit variable list (when you're connected to the character voice)
@@ -3480,7 +3918,7 @@ class CAINode extends EventEmitter {
      * @returns {Promise<boolean>}
     */
     async login(token) {
-        this.#prop.edge_rollout = await (await https_fetch("https://character.ai/", "GET")).headers.get("set-cookie").match(/edge_rollout=(\d+)/)
+        this.#prop.edge_rollout = (await https_fetch("https://character.ai/", "GET")).headers.get("set-cookie").match(/edge_rollout=(\d+)/)
         if (this.#prop.edge_rollout !== null) this.#prop.edge_rollout = this.#prop.edge_rollout[1];
         this.#prop.user_data = await (await https_fetch("https://plus.character.ai/chat/user/", "GET", {
             'Authorization': `Token ${token}`
@@ -3501,23 +3939,36 @@ class CAINode extends EventEmitter {
     }
 
     /**
-     * Generate your Character.AI Token by email.  
+     * Send Character.AI Verify code to the email.  
+     * 
+     * @param {string} email
+    */
+    async send_code(email) {
+        await https_fetch("https://character.ai/api/trpc/auth.login?batch=1", "POST", {
+            "Content-Type": "application/json"
+        }, JSON.stringify({"0":{"json":{"email":email}}}))
+    }
+
+    /**
+     * Generate your Character.AI Token by email. and you will get the token by just pressing the button when you receive the email.  
      *   
      * Parameter 2: Timeout per 2 seconds (default 30, so it means = 60 seconds or 1 minute)  
      * You can disable the Timeout by set the parameter into 0.  
      *   
+     * Parameter Info  
+     * - 1st parameter `email`: Target email you want to generate the token.
      * Example  
-     * - Without Timer: `console.log(await library_name.generate_token("your@email.com", 0))`  
-     * - With Timer: `console.log(await library_name.generate_token("your@email.com", 60))`
-     * - With callback: `console.log(await library_name.generate_token("your@email.com", 30, function() {console.log("Please check your email")}, function() {console.log("timeout!")}))`
+     * - Without Timer: `console.log(await library_name.generate_token_auto("your@email.com", 0))`  
+     * - With Timer: `console.log(await library_name.generate_token_auto("your@email.com", 60))`
+     * - With callback: `console.log(await library_name.generate_token_auto("your@email.com", 30, function() {console.log("Please check your email")}, function() {console.log("timeout!")}))`
      * 
      * @param {string} email
-     * @param {number} timeout_per_2s
+     * @param {number | undefined} timeout_per_2s
      * @param {Function | undefined} mail_sent_cb
      * @param {Function | undefined} timeout_cb
      * @returns {Promise<string>}
     */
-    generate_token(email, timeout_per_2s = 30, mail_sent_cb = null, timeout_cb = null) {
+    generate_token_auto(email, timeout_per_2s = 30, mail_sent_cb = null, timeout_cb = null) {
         let current_timer = 1;
         return new Promise(async resolve => {
             let res;
@@ -3528,7 +3979,7 @@ class CAINode extends EventEmitter {
             if (!mail_sent_cb) console.log("Please check your email.");
             else mail_sent_cb();
             while(1) {
-                await wait(2000)
+                await wait(1000)
                 try {
                     res = await (await https_fetch(`https://character.ai/login/polling/?uuid=${polling_uuid}`, "GET")).json()
                 } catch(_) {_}
@@ -3552,6 +4003,39 @@ class CAINode extends EventEmitter {
             }
             resolve(res);
         })
+    }
+    
+    /**
+     * Generate your Character.AI Token putting the Character.AI verify link.  
+     * @param {string} verify_link
+     */
+    async generate_token_manual(verify_link) {
+        if (typeof verify_link != "string") throw "Please input the correct verify link."
+
+        let auth_parser = (await (await https_fetch(verify_link)).text()).match(/https:\/\/auth\.character\.ai\/__\/auth\/action\?[^"]+/g)
+        if (auth_parser == null) throw "Character.AI Verify code link is invalid or expired!"
+        else auth_parser = auth_parser[0].split('\\u0026');
+
+        const oob_code = auth_parser[1].slice(8)
+        const email = auth_parser[3].slice(auth_parser[3].indexOf("email%3D") + 8, auth_parser[3].indexOf("%26isApp%3Dtrue%26continue%3D%252F")).replaceAll("%252540", "@")
+
+        let res = (await (await https_fetch("https://identitytoolkit.googleapis.com/v1/accounts:signInWithEmailLink?key=AIzaSyAbLy_s6hJqVNr2ZN0UHHiCbJX1X8smTws", "POST", {
+            "Content-Type": "application/json"
+        }, JSON.stringify({"email": email,"oobCode": oob_code}))).json()).idToken
+        res = (await (await https_fetch("https://plus.character.ai/dj-rest-auth/google_idp/", "POST", {
+            "Content-Type": "application/json"
+        }, JSON.stringify({"id_token":res}))).json()).key
+
+        return res;
+    }
+    
+    /**
+     * Pings the Character AI server's health check endpoint.  
+     * 
+     * @returns {Promise<{"status": string}>}
+    */
+    async ping() {
+        return await (await https_fetch("https://neo.character.ai/ping/", "GET")).json();
     }
 
     /**
