@@ -1324,13 +1324,14 @@ class Character_Class {
      * @param {string} char_id
      * @returns {Promise<CharacterInformation>}
     */
-    async info(char_id) {
+    async info(char_id, lang = "en") {
         if (!this.#prop.token) throw "Please login first."
-        return await (await https_fetch("https://plus.character.ai/chat/character/info/", "POST", {
+        return await (await https_fetch("https://neo.character.ai/character/v1/get_character_info", "POST", {
             'Authorization': `Token ${this.#prop.token}`,
             "Content-Type": "application/json"
         }, JSON.stringify({
-            "external_id": char_id
+            "external_id": char_id,
+            "lang": lang
         }))).json()
     }
 
@@ -4066,5 +4067,6 @@ class CAINode extends EventEmitter {
         return true;
     }
 }
+
 
 export { CAINode }
