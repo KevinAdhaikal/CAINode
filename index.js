@@ -3947,7 +3947,7 @@ class CAINode extends EventEmitter {
     async send_code(email) {
         await https_fetch("https://character.ai/api/trpc/auth.login?batch=1", "POST", {
             "Content-Type": "application/json"
-        }, JSON.stringify({"0":{"json":{"email":email}}}))
+        }, JSON.stringify({"0":{"json":{"email":email, "originId":"web-next"}}}))
     }
 
     /**
@@ -3975,7 +3975,7 @@ class CAINode extends EventEmitter {
             let res;
             const polling_uuid = (await (await https_fetch("https://character.ai/api/trpc/auth.login?batch=1", "POST", {
                 "Content-Type": "application/json"
-            }, JSON.stringify({"0":{"json":{"email":email}}}))).json())[0].result.data.json
+            }, JSON.stringify({"0":{"json":{"email":email, "originId":"web-next"}}}))).json())[0].result.data.json
             if (!polling_uuid) throw "Please input the correct email."
             if (!mail_sent_cb) console.log("Please check your email.");
             else mail_sent_cb();
@@ -4070,3 +4070,4 @@ class CAINode extends EventEmitter {
 
 
 export { CAINode }
+
