@@ -4,12 +4,23 @@ const textDecoder = new TextDecoder()
 
 async function load() {
     if (typeof process !== "undefined" && process.versions && process.versions.node && Number(process.version.substring(1, 3)) < 18) {
+        // fetch
         fetch = await import("node-fetch")
         .then(module => module.default)
         .catch(e => {
             throw "Please install node-fetch by typing 'npm install node-fetch'.";
         });
-    } else fetch = global.fetch;
+
+        // prompt
+        prompt = await import("readline-sync")
+        .then(module => module.question)
+        .catch(e => {
+            throw "Please install readline-sync by typing 'npm install readline-sync'.";
+        });
+    } else {
+        fetch = global.fetch; // fetch
+        prompt = global.prompt; // prompt
+    }
 }
 
 await load();
@@ -4005,6 +4016,71 @@ class CAINode extends EventEmitter {
             resolve(res);
         })
     }
+
+    /**
+     * Generate your Character.AI Token using Apple Account.  
+     *   
+     * @returns {Promise<string>}
+    */
+    async generate_token_apple() { // thanks to ERL-20 for making this posbbile.
+        let create_session = await (await https_fetch("https://www.googleapis.com//identitytoolkit/v3/relyingparty/createAuthUri?key=AIzaSyAbLy_s6hJqVNr2ZN0UHHiCbJX1X8smTws", "POST", {}, JSON.stringify({
+            "providerId":"apple.com",
+            "continueUri":"https://auth.character.ai/__/auth/handler",
+            "customParameter":{},
+            "oauthScope":"{\"apple.com\":\"name,email\"}"
+        }))).json();
+
+        const apple_uri = new URL(create_session.authUri);
+        apple_uri.searchParams.set("scope", "openid");
+        apple_uri.searchParams.set("response_mode", "query");
+        
+        console.log("Copy this link and open it on your browser:", apple_uri.toString() + "\n");
+        const user_input = prompt("When the screen is blank/get error after login using google, Copy the link from the URL and input here:");
+
+        const get_info = await (await https_fetch("https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key=AIzaSyAbLy_s6hJqVNr2ZN0UHHiCbJX1X8smTws", "POST", {
+        }, JSON.stringify({
+            requestUri: user_input,
+            "sessionId":create_session.sessionId,
+            "returnSecureToken":true,
+            "returnIdpCredential":true
+        }))).json();
+
+        const res = (await (await https_fetch("https://plus.character.ai/dj-rest-auth/google_idp/", "POST", {
+            "Content-Type": "application/json"
+        }, JSON.stringify({"id_token":get_info.idToken}))).json()).key
+
+        return res;
+    }
+    /**
+     * Generate your Character.AI Token using Google Authentication.  
+     *   
+     * @returns {Promise<string>}
+    */
+    async generate_token_google() {
+        let create_session = await (await https_fetch("https://www.googleapis.com//identitytoolkit/v3/relyingparty/createAuthUri?key=AIzaSyAbLy_s6hJqVNr2ZN0UHHiCbJX1X8smTws", "POST", {}, JSON.stringify({
+            "providerId":"google.com",
+            "continueUri":"https://auth.character.ai/__/auth/handler",
+            "customParameter":{"prompt":"select_account"},
+            "oauthScope":"{\"google.com\":\"profile\"}"
+        }))).json();
+
+        console.log("Copy this link and open it on your browser:", create_session.authUri + "\n");
+        const user_input = prompt("When the screen is blank/get error after login using google, Copy the link from the URL and input here:");
+
+        const get_info = await (await https_fetch("https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key=AIzaSyAbLy_s6hJqVNr2ZN0UHHiCbJX1X8smTws", "POST", {
+        }, JSON.stringify({
+            requestUri: user_input,
+            "sessionId":create_session.sessionId,
+            "returnSecureToken":true,
+            "returnIdpCredential":true
+        }))).json();
+
+        const res = (await (await https_fetch("https://plus.character.ai/dj-rest-auth/google_idp/", "POST", {
+            "Content-Type": "application/json"
+        }, JSON.stringify({"id_token":get_info.idToken}))).json()).key
+
+        return res;
+    }
     
     /**
      * Generate your Character.AI Token putting the Character.AI verify link.  
@@ -4068,6 +4144,4 @@ class CAINode extends EventEmitter {
     }
 }
 
-
 export { CAINode }
-
