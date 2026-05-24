@@ -2,14 +2,19 @@ import WebSocket from "ws";
 import EventEmitter from "node:events";
 const textDecoder = new TextDecoder()
 
+let fetch = global.fetch;
+let prompt = global.prompt;
+
 async function load() {
-    if (typeof process !== "undefined" && process.versions && process.versions.node && Number(process.version.substring(1, 3)) < 18) {
+    if (typeof Bun === "undefined") {
         // fetch
-        fetch = await import("node-fetch")
-        .then(module => module.default)
-        .catch(_ => {
-            throw "Please install node-fetch by typing 'npm install node-fetch'.";
-        });
+        if (Number(process.version.slice(1, 3)) <= 18) {
+            fetch = await import("node-fetch")
+            .then(module => module.default)
+            .catch(_ => {
+                throw "Please install node-fetch by typing 'npm install node-fetch'.";
+            });
+        }
 
         // prompt
         prompt = await import("readline-sync")
@@ -17,9 +22,6 @@ async function load() {
         .catch(_ => {
             throw "Please install readline-sync by typing 'npm install readline-sync'.";
         });
-    } else {
-        fetch = global.fetch; // fetch
-        prompt = global.prompt; // prompt
     }
 }
 
