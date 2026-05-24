@@ -7,14 +7,14 @@ async function load() {
         // fetch
         fetch = await import("node-fetch")
         .then(module => module.default)
-        .catch(e => {
+        .catch(_ => {
             throw "Please install node-fetch by typing 'npm install node-fetch'.";
         });
 
         // prompt
         prompt = await import("readline-sync")
         .then(module => module.question)
-        .catch(e => {
+        .catch(_ => {
             throw "Please install readline-sync by typing 'npm install readline-sync'.";
         });
     } else {
@@ -37,7 +37,10 @@ function generateRandomUUID() {
 }
 
 async function https_fetch(url, method, headers = {}, body_data = "") {
-    if (body_data) headers["Content-Length"] = body_data.length
+    if (body_data && !(body_data instanceof FormData)) {
+        headers["Content-Length"] = typeof body_data === "string" ? Buffer.byteLength(body_data) : body_data.length;
+    }
+
     return await fetch(url, {
         method: method,
         headers: {
@@ -51,10 +54,10 @@ async function https_fetch(url, method, headers = {}, body_data = "") {
             "Sec-Fetch-Site": "none",
             "Sec-Fetch-User": "?1",
             "TE": "trailers",
-            ...headers
+            ...headers // Ambil header custom lo
         },
         body: body_data ? body_data : undefined
-    })
+    });
 }
 
 function open_ws(url, cookie, userid, this_class) {
@@ -705,6 +708,60 @@ class Image_Class {
     async generate_image(prompt_name) {
         if (!this.#prop.token) throw "Please login first."
         return await (await https_fetch("https://plus.character.ai/chat/generate-image/", "POST", {"Authorization": `Token ${this.#prop.token}`, "Content-Type": "application/json"}, JSON.stringify({"image_description":prompt_name}))).json()
+    }
+
+    /**
+     * This method will upload your image to the Character.AI Server.  
+     *   
+     * Example  
+     * - Node JS:  
+     *   ```  
+     *   const fs = require("fs");
+     *   await library_name.image.generate_image(await fs.readFileSync("file_name.jpg"));
+     *   ```  
+     * - Bun JS:  
+     *   ```  
+     *   await library_name.image.generate_image(Bun.file("file_name.jpg"));
+     *   ```  
+     *   
+     * @param {Blob | Uint8Array | Buffer} buffer_image
+     * @returns {Promise<{status: string, value: string}>}
+     */
+    async upload_image(buffer_image) {
+        if (!this.#prop.token) throw "Please login first.";
+        let blob;
+        let buffer;
+
+        if (buffer_image instanceof Blob) {
+            blob = buffer_image;
+            buffer = new Uint8Array(await buffer_image.arrayBuffer());
+        } else if (buffer_image instanceof Uint8Array) {
+            buffer = buffer_image;
+            blob = new Blob([buffer_image]);
+        } else {
+            throw "Input must be Blob, Buffer, or Uint8Array.";
+        }
+
+        // Magic number for PNG, JPEG and WEBP
+        const is_png = buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47;
+        const is_jpeg = buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[buffer.length - 2] === 0xFF && buffer[buffer.length - 1] === 0xD9;
+        const is_webp = buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46 && buffer[8] === 0x57 && buffer[9] === 0x45 && buffer[10] === 0x42 && buffer[11] === 0x50;
+        if (!is_png && !is_jpeg && !is_webp) throw "Image must be PNG, JPEG or WEBP.";
+
+        const mime = is_png ? "image/png" : "image/jpeg";
+
+        if (!blob.type) {
+            blob = new Blob([buffer], {
+                type: mime
+            });
+        }
+
+        const form_data = new FormData();
+        form_data.append("image", blob, "blob");
+
+        return await (await https_fetch("https://neo.character.ai/image/upload_private_image", "POST", {
+            "Authorization": `Token ${this.#prop.token}`
+        }, form_data)).json();;
     }
 }
 
@@ -1486,13 +1543,13 @@ class Character_Class {
      * 
      * @param {string | undefined} message
      * @param {boolean | undefined} manual_turn
-     * @param {string | undefined} image_url_path
-     * @param {{char_id: string, chat_id: string, timeout_ms: number} | undefined} manual_opt
+     * @param {{char_id: string, chat_id: string, timeout_ms: number, image_link: string} | undefined} manual_opt
      * @returns {Promise<SingleCharacterChatInfo>}
     */
-    async send_message(message = "", manual_turn = false, image_url_path = "", manual_opt = {
+    async send_message(message = "", manual_turn = false, manual_opt = {
         char_id: this.#prop.current_char_id_chat,
         chat_id: this.#prop.current_chat_id,
+        image_link: "",
         timeout_ms: 0
     }) {
         if (!this.#prop.token) throw "Please login first."
@@ -1501,7 +1558,8 @@ class Character_Class {
             manual_opt = {
                 char_id: this.#prop.current_char_id_chat,
                 chat_id: this.#prop.current_chat_id,
-                timeout_ms: 0
+                timeout_ms: 0,
+                image_link: ""
             }
         }
         if (!manual_opt.char_id) {
@@ -1512,8 +1570,9 @@ class Character_Class {
             if (this.#prop.current_chat_id) manual_opt.chat_id = this.#prop.current_chat_id
             else throw "Chat ID cannot be empty! please input Chat ID correctly, or connect to the character by using character.connect() function."
         }
-        if (typeof manual_opt.timeout_ms != "number") throw "Timeout input must be number."
-        if (manual_opt.timeout_ms < 0) manual_opt.timeout_ms = 0;
+        if (typeof manual_opt.image_link === "object") manual_opt.image_link = manual_opt.image_link.value;
+        if (typeof manual_opt.image_link !== "string") throw "Image Link must be string";
+        if (typeof manual_opt.timeout_ms !== "number" || manual_opt.timeout_ms < 0) manual_opt.timeout_ms = 0;
 
         const turn_key = this.#prop.join_type ? generateRandomUUID() : ""
 
@@ -1539,10 +1598,18 @@ class Character_Class {
                     "candidates": [{
                         "candidate_id": turn_key,
                         "raw_content": message,
-                        ...image_url_path ? { tti_image_rel_path: image_url_path } : {}
+                        //...manual_opt.image_link ? { tti_image_rel_path: manual_opt.image_link } : {}
                     }],
                     "primary_candidate_id": turn_key
                 },
+                ...manual_opt.image_link ? {
+                    "attachments": [
+                        {
+                            "type": "TYPE_IMAGE",
+                            "url": manual_opt.image_link
+                        }
+                    ]
+                } : {},
                 "previous_annotations": {
                     "boring": 0,
                     "not_boring": 0,
@@ -2538,16 +2605,21 @@ class GroupChat_Class {
      * ```
      * 
      * @param {string} message
-     * @param {string | undefined} image_url_path
-     * @param {{groupchat_id: string, timeout_ms: number} | undefined} manual_opt
+     * @param {{groupchat_id: string, timeout_ms: number, image_link: string | object} | undefined} manual_opt
      * @returns {Promise<GroupChatInfo>}
     */
-    async send_message(message, image_url_path = "", manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}) {
+    async send_message(message, manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}) {
         if (!this.#prop.token) throw "Please login first."
 
-        if (typeof manual_opt != "object") manual_opt = {groupchat_id: this.#prop.current_chat_id, timeout_ms: 0}
-        if (typeof manual_opt.groupchat_id != "string" || !manual_opt.groupchat_id) manual_opt.groupchat_id = this.#prop.current_chat_id
-        if (typeof manual_opt.timeout_ms != "number" || manual_opt.timeout_ms < 0) manual_opt.timeout_ms = 0;
+        if (typeof manual_opt !== "object") manual_opt = {
+            groupchat_id: this.#prop.current_chat_id,
+            image_link: "",
+            timeout_ms: 0
+        }
+        if (typeof manual_opt.groupchat_id !== "string" || !manual_opt.groupchat_id) manual_opt.groupchat_id = this.#prop.current_chat_id
+        if (typeof manual_opt.image_link === "object") manual_opt.image_link = manual_opt.image_link.value;
+        if (typeof manual_opt.image_link !==  "string") throw "Image Link must be string";
+        if (typeof manual_opt.timeout_ms !== "number" || manual_opt.timeout_ms < 0) manual_opt.timeout_ms = 0;
 
         if (!manual_opt.groupchat_id) throw "Group Chat ID cannot be empty, or at least connect to the Group Chat first.";
 
@@ -2575,7 +2647,7 @@ class GroupChat_Class {
                             "candidates": [{
                                 "candidate_id": turn_key,
                                 "raw_content": message,
-                                ...image_url_path ? { tti_image_rel_path: image_url_path } : {}
+                                ...manual_opt.image_link ? { tti_image_rel_path: manual_opt.image_link } : {}
                             }],
                             "primary_candidate_id": turn_key
                         }
@@ -3474,6 +3546,138 @@ class Livekit_Class extends EventEmitter {
     }
 }
 
+class Feed_Class {
+    #prop;
+    constructor(prop) {
+        this.#prop = prop;
+    }
+
+    /**
+     * @typedef {Object} FeedList
+     * @property {string} uuid
+     * @property {string} title
+     * @property {Object[]} contents
+     * @property {string} contents[].item_id
+     * @property {number} contents[].component_type
+     * @property {number} contents[].size
+     * @property {string} contents[].retrieval_channel
+     * @property {Object} contents[].character_item
+     * @property {string} contents[].character_item.external_id
+     * @property {string} contents[].character_item.name
+     * @property {string} contents[].character_item.participant__name
+     * @property {number} contents[].character_item.participant__num_interactions
+     * @property {string} contents[].character_item.title
+     * @property {string} contents[].character_item.description
+     * @property {string} contents[].character_item.greeting
+     * @property {string} contents[].character_item.visibility
+     * @property {string} contents[].character_item.avatar_file_name
+     * @property {string} contents[].character_item.user__username
+     * @property {string} contents[].character_item.short_hash
+     */
+
+    /**
+     * Get recommended list of Feed Character.AI.  
+     *   
+     * Example: `await library_name.feed.recommended()`  
+     * 
+     * @param {{}} [options={}] 
+     * @param {number} [page_size=20] 
+     * @param {string} [cursor=""] 
+     * @returns {Promise<FeedList>}
+     */
+    async recommended(options = {}, page_size = 20, cursor = "") {
+        if (!this.#prop.token) throw "Please login first.";
+        if (typeof options !== "object") options = {};
+
+        return await (await https_fetch("https://feed.api.character.ai/api/feed/recommended", "POST", {
+            "Authorization": "Token " + this.#prop.token,
+            "Content-Type": "application/json"
+        }, JSON.stringify({
+            page_size,
+            ...cursor ? {cursor: cursor} : {},
+            ...options
+        }))).json();
+    }
+
+    /**
+     * Get Social Feed list Character.AI.  
+     *   
+     * Example: `await library_name.feed.social_feed()`  
+     * @param {{}} [options={}] 
+     * @param {number} [page_size=20] 
+     * @param {string} [cursor=""] 
+     * @returns {Promise<FeedList>}
+     */
+    async social_feed(options = {}, page_size = 20, cursor = "") {
+        if (!this.#prop.token) throw "Please login first.";
+        if (typeof options !== "object") options = {};
+
+        return await (await https_fetch("https://feed.api.character.ai/api/feed/social_feed", "POST", {
+            "Authorization": "Token " + this.#prop.token,
+            "Content-Type": "application/json"
+        }, JSON.stringify({
+            page_size,
+            ...cursor ? {cursor: cursor} : {},
+            ...options
+        }))).json();
+    }
+    
+    /**
+     * Get Related Posts Character.AI by Feed Post ID.  
+     *   
+     * Example: `await library_name.feed.related_posts()`  
+     * @param {string} post_id 
+     * @param {number} [limit=10] 
+     * @returns {Promise<FeedList>}
+     */
+    async related_posts(post_id, limit = 10) {
+        if (!this.#prop.token) throw "Please login first.";
+        if (!post_id) throw "Please input the Post ID.";
+
+        return await (await https_fetch("https://feed.api.character.ai/api/feed/related-posts/" + post_id, "POST", {
+            "Authorization": "Token " + this.#prop.token,
+            "Content-Type": "application/json"
+        }, JSON.stringify({
+            limit
+        }))).json();
+    }
+
+    /**
+     * Reacting Feed Post.  
+     *   
+     * Example: `await library_name.feed.react_post()`  
+     * @param {string} post_id 
+     * @param {string} [sticker_type="heart"] 
+     */
+    async react_post(post_id, sticker_type = "heart") {
+        if (!this.#prop.token) throw "Please login first.";
+        if (!post_id) throw "Please input the Post ID.";
+
+        return await (await https_fetch("https://engagement.api.character.ai/v1/engagement_service/posts/" + post_id + "/sticker", "POST", {
+            "Authorization": "Token " + this.#prop.token,
+            "Content-Type": "application/json"
+        }, JSON.stringify({
+            sticker_type
+        }))).json();
+    }
+
+    /**
+     * Unreacting Feed Post.  
+     *   
+     * Example: `await library_name.feed.unreact_post()`  
+     * @param {string} post_id 
+     * @param {string} [sticker_type="heart"] 
+     */
+    async unreact_post(post_id, sticker_type = "heart") {
+        if (!this.#prop.token) throw "Please login first.";
+        if (!post_id) throw "Please input the Post ID.";
+
+        return await (await https_fetch("https://engagement.api.character.ai/v1/engagement_service/posts/" + post_id + "/sticker/" + sticker_type + "/delete", "POST", {
+            "Authorization": "Token " + this.#prop.token,
+        })).json();
+    }
+}
+
 class Voice_Class {
     /**
      * @typedef {Object} VoiceInfo
@@ -3729,15 +3933,6 @@ class Voice_Class {
     }
 }
 
-class Feed_Class {
-    #prop
-    constructor(prop) {
-        this.#prop = prop;
-    }
-
-
-}
-
 class CAINode extends EventEmitter {
     #prop = new CAINode_prop(); // Property
 
@@ -3886,6 +4081,17 @@ class CAINode extends EventEmitter {
     notification = new Notification_Class(this.#prop) // Notification Class
 
     /**
+     * Feed function list  
+     *   
+     * - `recommended()`: Get recommended list of Feed Character.AI.  
+     * - `social_feed()`: Get Social Feed list Character.AI.  
+     * - `related_posts()`: Get Related Posts Character.AI by Feed Post ID.  
+     * - `react_post()`: Reacting Feed Post.  
+     * - `unreact_post()`: Unreacting Feed Post.  
+     */
+    feed = new Feed_Class(this.#prop) // Feed Class
+
+    /**
      * Voice function list  
      *   
      * - `user_list()`: Get your own voice creation list information.  
@@ -3911,7 +4117,7 @@ class CAINode extends EventEmitter {
     /**
      * Get Character.AI message events.
      * 
-     * @template {"data"} T
+     * @template {"message"} T
      * @param {T} event_name
      * @param {(args: string) => void} listener
      * @returns {this}
@@ -4023,7 +4229,9 @@ class CAINode extends EventEmitter {
      * @returns {Promise<string>}
     */
     async generate_token_apple() { // thanks to ERL-20 for making this posbbile.
-        let create_session = await (await https_fetch("https://www.googleapis.com//identitytoolkit/v3/relyingparty/createAuthUri?key=AIzaSyAbLy_s6hJqVNr2ZN0UHHiCbJX1X8smTws", "POST", {}, JSON.stringify({
+        let create_session = await (await https_fetch("https://www.googleapis.com//identitytoolkit/v3/relyingparty/createAuthUri?key=AIzaSyAbLy_s6hJqVNr2ZN0UHHiCbJX1X8smTws", "POST", {
+            "Referer": "https://auth.character.ai/"
+        }, JSON.stringify({
             "providerId":"apple.com",
             "continueUri":"https://auth.character.ai/__/auth/handler",
             "customParameter":{},
@@ -4057,13 +4265,14 @@ class CAINode extends EventEmitter {
      * @returns {Promise<string>}
     */
     async generate_token_google() {
-        let create_session = await (await https_fetch("https://www.googleapis.com//identitytoolkit/v3/relyingparty/createAuthUri?key=AIzaSyAbLy_s6hJqVNr2ZN0UHHiCbJX1X8smTws", "POST", {}, JSON.stringify({
+        let create_session = await (await https_fetch("https://www.googleapis.com//identitytoolkit/v3/relyingparty/createAuthUri?key=AIzaSyAbLy_s6hJqVNr2ZN0UHHiCbJX1X8smTws", "POST", {
+            "Referer": "https://auth.character.ai/"
+        }, JSON.stringify({
             "providerId":"google.com",
             "continueUri":"https://auth.character.ai/__/auth/handler",
             "customParameter":{"prompt":"select_account"},
             "oauthScope":"{\"google.com\":\"profile\"}"
         }))).json();
-
         console.log("Copy this link and open it on your browser:", create_session.authUri + "\n");
         const user_input = prompt("When the screen is blank/get error after login using google, Copy the link from the URL and input here:");
 
