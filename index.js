@@ -54,7 +54,7 @@ async function https_fetch(url, method, headers = {}, body_data = "") {
             "Sec-Fetch-Site": "none",
             "Sec-Fetch-User": "?1",
             "TE": "trailers",
-            ...headers // Ambil header custom lo
+            ...headers
         },
         body: body_data ? body_data : undefined
     });
@@ -4229,7 +4229,7 @@ class CAINode extends EventEmitter {
      * @returns {Promise<string>}
     */
     async generate_token_apple() { // thanks to ERL-20 for making this posbbile.
-        let create_session = await (await https_fetch("https://www.googleapis.com//identitytoolkit/v3/relyingparty/createAuthUri?key=AIzaSyAbLy_s6hJqVNr2ZN0UHHiCbJX1X8smTws", "POST", {
+        let create_session = await (await https_fetch("https://www.googleapis.com/identitytoolkit/v3/relyingparty/createAuthUri?key=AIzaSyAbLy_s6hJqVNr2ZN0UHHiCbJX1X8smTws", "POST", {
             "Referer": "https://auth.character.ai/"
         }, JSON.stringify({
             "providerId":"apple.com",
@@ -4265,7 +4265,7 @@ class CAINode extends EventEmitter {
      * @returns {Promise<string>}
     */
     async generate_token_google() {
-        let create_session = await (await https_fetch("https://www.googleapis.com//identitytoolkit/v3/relyingparty/createAuthUri?key=AIzaSyAbLy_s6hJqVNr2ZN0UHHiCbJX1X8smTws", "POST", {
+        let create_session = await (await https_fetch("https://www.googleapis.com/identitytoolkit/v3/relyingparty/createAuthUri?key=AIzaSyAbLy_s6hJqVNr2ZN0UHHiCbJX1X8smTws", "POST", {
             "Referer": "https://auth.character.ai/"
         }, JSON.stringify({
             "providerId":"google.com",
