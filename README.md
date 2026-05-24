@@ -17,28 +17,46 @@ Built for developers who want to **chat with Character.AI programmatically** usi
 ---
 
 ## 🚀 Features
+
 CAINode supports nearly **all Character.AI features** – designed for both simple and advanced use cases:
 
 ### ⚙️ Core Features
-- ✅ **Lightweight** – No Puppeteer, no headless browser. Uses native WebSocket + Fetch
-- ✅ **Cross-runtime** – Works with **Node.js**, **Deno**, and **Bun**
-- ✅ **Fully Async** – Promise-based, easy integration
-- ✅ **Streaming Chat Support** – Typing-style responses, streamed token by token
+
+* ✅ **Lightweight** – No Puppeteer, no headless browser. Uses native WebSocket + Fetch
+* ✅ **Cross-runtime** – Works with **Node.js**, **Deno**, and **Bun**
+* ✅ **Fully Async** – Promise-based, easy integration
+* ✅ **Streaming Chat Support** – Typing-style responses, streamed token by token
 
 ### 💬 Chat Support
-- 🧠 **Single Chat** – Chat with any character
-- 👥 **Group Chat** – Chat with multiple characters in one conversation
-- 📝 **Chat History** – Fetch previous messages with metadata
-- 🎤 **Voice Call Support** – Full support for voice interactions with characters
+
+* 🧠 **Single Chat** – Chat with any character
+* 👥 **Group Chat** – Chat with multiple characters in one conversation
+* 📝 **Chat History** – Fetch previous messages with metadata
+* 🎤 **Voice Call Support** – Full support for voice interactions with characters
+
+### 🌐 Feed Features
+
+* 📰 **Recommended Feed** – Browse AI-recommended posts and character activity
+* 👥 **Social Feed** – View public community posts and social updates
+* ❤️ **Feed Interaction** – Like, explore, and interact with feed content
+
+### 🔐 Authentication Support
+
+* 🔑 **Email Login** – Traditional Character.AI login support
+* 🟢 **Google Login** – Authenticate using Google account
+* 🍎 **Apple Login** – Sign in with Apple support
 
 ### 🧩 Character & User Control
-- 🔍 **Search Characters** – Explore, get trending, featured, or searched characters
-- 👤 **User Profiles** – Fetch profile data, persona, and more
-- 🧠 **Persona Management** – Edit and apply custom persona to your characters
+
+* 🔍 **Search Characters** – Explore, get trending, featured, or searched characters
+* 👤 **User Profiles** – Fetch profile data, persona, and more
+* 🧠 **Persona Management** – Edit and apply custom persona to your characters
 
 ### 🖼️ Media & Generation
-- 🖼️ **Image Generation** – Send prompts, receive image replies
-- 🎨 **Image Uploading Support** – Upload image to use in messages
+
+* 🖼️ **Image Generation** – Send prompts, receive image replies
+* 🎨 **Image Uploading Support** – Upload image to use in messages
+
 
 ---
 
