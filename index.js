@@ -318,6 +318,30 @@ class User_Class {
     */
 
     /**
+     * @typedef {Object} Character
+     * @property {string} external_id
+     * @property {string} title
+     * @property {string} name
+     * @property {string} description
+     * @property {string} greeting
+     * @property {string} avatar_file_name
+     * @property {string} visibility
+     * @property {boolean} copyable
+     * @property {string} participant__name
+     * @property {number} participant__num_interactions
+     * @property {number} user_id
+     * @property {string} user__username
+     * @property {boolean} img_gen_enabled
+     * @property {number} upvotes
+     */
+
+    /**
+     * @typedef {Object} CharacterResponse
+     * @property {string} status
+     * @property {Character[]} characters
+     */
+
+    /**
      * @type {CAINode_Property}
      */
     #prop;
@@ -674,6 +698,35 @@ class User_Class {
             "Authorization": `Token ${this.#prop.token}`
         })).json()
     }
+
+    /**
+     * Check your upvoted characters.  
+     *   
+     * Example: `await library_name.user.upvoted_characters()`  
+     * 
+     * @returns {Promise<CharacterResponse>}
+     */
+    async upvoted_characters() {
+        if (!this.#prop.token) throw "Please login first.";
+        return await (await https_fetch("https://neo.character.ai/character/v1/upvoted_characters", "GET", {
+            "Authorization": "Token " + this.#prop.token
+        })).json();
+    }
+
+    /**
+     * Get your personas.  
+     * TODO: we have to documented the result of this response.  
+     *   
+     * Example: `await library_name.user.get_personas()`  
+     * 
+     * @returns {Promise<{"personas": []}>}
+     */
+    async get_personas() {
+        if (!this.#prop.token) throw "Please login first.";
+        return await (await https_fetch("https://neo.character.ai/character/v1/get_user_personas", "GET", {
+            "Authorization": "Token " + this.#prop.token
+        })).json();
+    }
 }
 
 class Image_Class {
@@ -731,6 +784,7 @@ class Image_Class {
      */
     async upload_image(buffer_image) {
         if (!this.#prop.token) throw "Please login first.";
+        
         let blob;
         let buffer;
 
@@ -763,7 +817,7 @@ class Image_Class {
 
         return await (await https_fetch("https://neo.character.ai/image/upload_private_image", "POST", {
             "Authorization": `Token ${this.#prop.token}`
-        }, form_data)).json();;
+        }, form_data)).json();
     }
 }
 
@@ -3680,6 +3734,46 @@ class Feed_Class {
     }
 }
 
+class Scene_Class {
+    /**
+     * @typedef {Object} ScenesList
+     * @property {Object[]} scenes
+     * @property {string} scenes[].scene_id
+     * @property {string} scenes[].title
+     * @property {string} scenes[].description
+     * @property {string} scenes[].background_image_url
+     * @property {string} scenes[].color_scheme_id
+     * @property {string} scenes[].visibility
+     * @property {string[]} [scenes[].tags]
+     * @property {Object} scenes[].definition
+     * @property {string} scenes[].definition.goal
+     * @property {string} scenes[].creator_username
+     * @property {string} next_cursor
+     * @property {number} version
+     * @property {boolean} has_next
+     */
+
+    #prop
+    constructor(prop) {
+        this.#prop = prop;
+    }
+
+    /**
+     * Get curated list of scenes.  
+     *   
+     * Example: `await library_name.scene.get_curated()`  
+     * 
+     * @param {string} cursor
+     * @returns {Promise<ScenesList>}
+     */
+    async get_curated(cursor = "") {
+        if (!this.#prop.token) throw "Please login first.";
+        return await (await https_fetch("https://neo.character.ai/scene/v1/scenes/curated" + cursor !== "" ? `?cursor=${cursor}` : "", "GET", {
+            "Authorization": "Token " + this.#prop.token,
+        })).json();
+    }
+}
+
 class Voice_Class {
     /**
      * @typedef {Object} VoiceInfo
@@ -3973,9 +4067,11 @@ class CAINode extends EventEmitter {
      * - `public_info()`: Get user public information account.  
      * - `public_info_array()`: Get user public information account. same like `public_info()`, but this function have less information.  
      * - `liked_character_list()`: Get account liked character list.  
-     * - `add_muted_words()`: Add muted words.
-     * - `remove_muted_words()`: Remove muted words.
-     * - `clear_muted_words()`: Clear muted words.
+     * - `add_muted_words()`: Add muted words.  
+     * - `remove_muted_words()`: Remove muted words.  
+     * - `clear_muted_words()`: Clear muted words.  
+     * - `upvoted_characters()`: Check your upvoted characters.  
+     * - `get_personas()`: Get your personas.
     */
     user = new User_Class(this.#prop) // User Class
     
@@ -3983,7 +4079,8 @@ class CAINode extends EventEmitter {
      * Image function list  
      *   
      * - `generate_avatar()`: Generate avatar image using prompt.  
-     * - `generate_image()`: Generate image using prompt.
+     * - `generate_image()`: Generate image using prompt.  
+     * - `upload_image()`: This method will upload your image to the Character.AI Server.
     */
     image = new Image_Class(this.#prop); // Image Class
 
@@ -4092,6 +4189,13 @@ class CAINode extends EventEmitter {
      * - `unreact_post()`: Unreacting Feed Post.  
      */
     feed = new Feed_Class(this.#prop) // Feed Class
+
+    /**
+     * Scene function list  
+     *   
+     * - `get_curated()`: Get curated list of scenes.
+     */
+    scene = new Scene_Class(this.#prop); // Scene Class
 
     /**
      * Voice function list  
@@ -4248,6 +4352,7 @@ class CAINode extends EventEmitter {
         const user_input = prompt("When the screen is blank/get error after login using google, Copy the link from the URL and input here:");
 
         const get_info = await (await https_fetch("https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key=AIzaSyAbLy_s6hJqVNr2ZN0UHHiCbJX1X8smTws", "POST", {
+            "Referer": "https://auth.character.ai/"
         }, JSON.stringify({
             requestUri: user_input,
             "sessionId":create_session.sessionId,
@@ -4279,6 +4384,7 @@ class CAINode extends EventEmitter {
         const user_input = prompt("When the screen is blank/get error after login using google, Copy the link from the URL and input here:");
 
         const get_info = await (await https_fetch("https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key=AIzaSyAbLy_s6hJqVNr2ZN0UHHiCbJX1X8smTws", "POST", {
+            "Referer": "https://auth.character.ai/"
         }, JSON.stringify({
             requestUri: user_input,
             "sessionId":create_session.sessionId,
